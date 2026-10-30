@@ -1,6 +1,7 @@
 #ifndef APPSPLITTUNNELINGCONTROLLER_H
 #define APPSPLITTUNNELINGCONTROLLER_H
 
+#include <QStringList>
 #include <QVector>
 
 #include "core/utils/routeModes.h"
@@ -14,6 +15,8 @@ public:
 
     bool addApp(const amnezia::InstalledAppInfo &appInfo);
     void removeApp(int index);
+    bool addFolder(const QString &folderPath);
+    void removeFolder(int index);
     void clearAppsList();
     void setRouteMode(AppsRouteMode routeMode);
     void toggleSplitTunneling(bool enabled);
@@ -21,11 +24,13 @@ public:
     AppsRouteMode getRouteMode() const;
     bool isSplitTunnelingEnabled() const;
     QVector<amnezia::InstalledAppInfo> getApps() const;
+    QStringList getFolders() const;
 
 private:
     SecureAppSettingsRepository* m_appSettingsRepository;
     AppsRouteMode m_currentRouteMode;
     QVector<amnezia::InstalledAppInfo> m_apps;
+    QStringList m_folders;
 };
 
 #endif // APPSPLITTUNNELINGCONTROLLER_H

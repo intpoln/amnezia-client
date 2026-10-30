@@ -54,6 +54,8 @@ public:
     void setAppsRouteMode(AppsRouteMode mode);
     void setVpnApps(AppsRouteMode mode, const QVector<InstalledAppInfo> &apps);
     QVector<InstalledAppInfo> vpnApps(AppsRouteMode mode) const;
+    void setVpnAppFolders(AppsRouteMode mode, const QStringList &folders);
+    QStringList vpnAppFolders(AppsRouteMode mode) const;
     bool isAppsSplitTunnelingEnabled() const;
     void setAppsSplitTunnelingEnabled(bool enabled);
 

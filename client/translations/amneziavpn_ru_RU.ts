@@ -106,6 +106,26 @@
         <source>Application removed: %1</source>
         <translation>Приложение удалено: %1</translation>
     </message>
+    <message>
+        <location filename="../ui/controllers/appSplitTunnelingUiController.cpp"/>
+        <source>The folder has already been added</source>
+        <translation>Папка уже была добавлена</translation>
+    </message>
+    <message>
+        <location filename="../ui/controllers/appSplitTunnelingUiController.cpp"/>
+        <source>Folder added: %1. It contains %2 executable files, all of them will bypass the VPN</source>
+        <translation>Папка добавлена: %1. В ней %2 исполняемых файлов, все они будут работать в обход VPN</translation>
+    </message>
+    <message>
+        <location filename="../ui/controllers/appSplitTunnelingUiController.cpp"/>
+        <source>Folder added: %1. Executable files found: %2</source>
+        <translation>Папка добавлена: %1. Найдено исполняемых файлов: %2</translation>
+    </message>
+    <message>
+        <location filename="../ui/controllers/appSplitTunnelingUiController.cpp"/>
+        <source>Folder removed: %1</source>
+        <translation>Папка удалена: %1</translation>
+    </message>
 </context>
 <context>
     <name>CaptchaDialogType</name>
@@ -4096,8 +4116,23 @@ Create one from the current settings.</source>
     </message>
     <message>
         <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="211"/>
-        <source>Executable files (*.*)</source>
-        <translation>Исполняемые файлы (*.*)</translation>
+        <source>Executable files (*.exe)</source>
+        <translation>Исполняемые файлы (*.exe)</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml"/>
+        <source>Add folder</source>
+        <translation>Добавить папку</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml"/>
+        <source>All .exe files in the folder and its subfolders will bypass the VPN</source>
+        <translation>Все .exe-файлы в папке и её подпапках будут работать в обход VPN</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml"/>
+        <source>Folder: %1</source>
+        <translation>Папка: %1</translation>
     </message>
 </context>
 <context>

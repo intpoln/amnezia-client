@@ -1,6 +1,8 @@
 #include <QCoreApplication>
 #include <QDebug>
+#include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QProcessEnvironment>
@@ -8,9 +10,11 @@
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QTest>
+#include <QUrl>
 
 #include "utils/testCoreController.h"
 #include "core/models/serverDescription.h"
+#include "core/utils/folderExecutables.h"
 #include "secureQSettings.h"
 #include "vpnConnection.h"
 
@@ -93,6 +97,76 @@ private slots:
         m_coreController->m_appSplitTunnelingUiController->updateModel();
         QVERIFY2(finishedSpy.count() == 2, "finished signal should be emitted");
         QVERIFY2(m_coreController->m_appSplitTunnelingModel->rowCount() == 0, "AppSplitTunnelingModel should have 0 rows");
+    }
+
+    void testFolderExecutables()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        QVERIFY(QDir(dir.path()).mkpath("sub/deep"));
+        for (const QString &name : { "a.exe", "sub/b.EXE", "sub/c.dll", "sub/deep/d.exe", "readme.txt" }) {
+            QFile file(dir.filePath(name));
+            QVERIFY(file.open(QIODevice::WriteOnly));
+        }
+
+        QStringList found = folderExecutables::find(dir.path());
+        found.sort(Qt::CaseInsensitive);
+        QCOMPARE(found,
+                 QStringList({ dir.filePath("a.exe"), dir.filePath("sub/b.EXE"), dir.filePath("sub/deep/d.exe") }));
+
+        const QStringList expanded =
+                folderExecutables::expand({ dir.filePath("A.EXE"), "C:/Other/app.exe" }, { dir.path() });
+        QCOMPARE(expanded.size(), 4);
+        QCOMPARE(expanded.first(), dir.filePath("A.EXE"));
+
+        QVERIFY(folderExecutables::find(dir.filePath("missing")).isEmpty());
+    }
+
+    void testFolders()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        QFile exe(dir.filePath("game.exe"));
+        QVERIFY(exe.open(QIODevice::WriteOnly));
+        exe.close();
+
+        auto uiController = m_coreController->m_appSplitTunnelingUiController;
+        auto model = m_coreController->m_appSplitTunnelingModel;
+        QSignalSpy finishedSpy(uiController, &AppSplitTunnelingUiController::finished);
+        QSignalSpy errorOccurredSpy(uiController, &AppSplitTunnelingUiController::errorOccurred);
+
+        uiController->addApp(QCoreApplication::applicationFilePath());
+        uiController->addFolder(QUrl::fromLocalFile(dir.path()));
+        QVERIFY(finishedSpy.wait(5000) || finishedSpy.count() == 2);
+        QCOMPARE(finishedSpy.count(), 2);
+        QVERIFY2(finishedSpy.last().first().toString().endsWith(": 1"),
+                 qPrintable(finishedSpy.last().first().toString()));
+
+        uiController->updateModel();
+        QCOMPARE(model->rowCount(), 2);
+        const QModelIndex folderIndex = model->index(1, 0);
+        QCOMPARE(model->data(folderIndex, AppSplitTunnelingModel::IsFolderRole).toBool(), true);
+        QCOMPARE(model->data(folderIndex, AppSplitTunnelingModel::FullPathRole).toString(),
+                 QDir::toNativeSeparators(dir.path()));
+        QCOMPARE(model->data(folderIndex, AppSplitTunnelingModel::AppPathRole).toString(),
+                 QFileInfo(dir.path()).fileName());
+        QCOMPARE(model->data(model->index(0, 0), AppSplitTunnelingModel::IsFolderRole).toBool(), false);
+
+        uiController->addFolder(QUrl::fromLocalFile(dir.path().toUpper()));
+        QCOMPARE(errorOccurredSpy.count(), 1);
+
+        auto repository = m_coreController->m_appSettingsRepository;
+        QCOMPARE(repository->vpnAppFolders(AppsRouteMode::VpnAllExceptApps), QStringList({ dir.path() }));
+        QCOMPARE(repository->vpnApps(AppsRouteMode::VpnAllExceptApps).size(), 1);
+        QCOMPARE(AppSplitTunnelingController(repository).getFolders(), QStringList({ dir.path() }));
+
+        uiController->removeApp(1);
+        uiController->updateModel();
+        QCOMPARE(model->rowCount(), 1);
+        QVERIFY(repository->vpnAppFolders(AppsRouteMode::VpnAllExceptApps).isEmpty());
+        QCOMPARE(repository->vpnApps(AppsRouteMode::VpnAllExceptApps).size(), 1);
+
+        uiController->removeApp(0);
     }
 };
 

@@ -259,6 +259,22 @@ void SecureAppSettingsRepository::setVpnApps(AppsRouteMode mode, const QVector<I
     emit appsChanged(mode);
 }
 
+QStringList SecureAppSettingsRepository::vpnAppFolders(AppsRouteMode mode) const
+{
+    QStringList folders;
+    const auto foldersArray = value("Conf/" + appsRouteModeString(mode) + "Folders").toJsonArray();
+    for (const auto &folder : foldersArray) {
+        folders.append(folder.toString());
+    }
+    return folders;
+}
+
+void SecureAppSettingsRepository::setVpnAppFolders(AppsRouteMode mode, const QStringList &folders)
+{
+    setValue("Conf/" + appsRouteModeString(mode) + "Folders", QJsonArray::fromStringList(folders));
+    emit appsChanged(mode);
+}
+
 bool SecureAppSettingsRepository::isAppsSplitTunnelingEnabled() const
 {
     return value("Conf/appsSplitTunnelingEnabled", false).toBool();

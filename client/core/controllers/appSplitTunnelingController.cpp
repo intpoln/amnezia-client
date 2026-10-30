@@ -1,5 +1,7 @@
 #include "appSplitTunnelingController.h"
 
+#include <QDir>
+
 AppSplitTunnelingController::AppSplitTunnelingController(SecureAppSettingsRepository* appSettingsRepository)
     : m_appSettingsRepository(appSettingsRepository)
 {
@@ -11,6 +13,7 @@ AppSplitTunnelingController::AppSplitTunnelingController(SecureAppSettingsReposi
     } else {
         m_apps = m_appSettingsRepository->vpnApps(m_currentRouteMode);
     }
+    m_folders = m_appSettingsRepository->vpnAppFolders(m_currentRouteMode);
 }
 
 bool AppSplitTunnelingController::addApp(const amnezia::InstalledAppInfo &appInfo)
@@ -35,6 +38,29 @@ void AppSplitTunnelingController::removeApp(int index)
     m_appSettingsRepository->setVpnApps(m_currentRouteMode, m_apps);
 }
 
+bool AppSplitTunnelingController::addFolder(const QString &folderPath)
+{
+    const QString cleanPath = QDir::cleanPath(folderPath);
+    if (cleanPath.isEmpty() || m_folders.contains(cleanPath, Qt::CaseInsensitive)) {
+        return false;
+    }
+
+    m_folders.append(cleanPath);
+    m_appSettingsRepository->setVpnAppFolders(m_currentRouteMode, m_folders);
+
+    return true;
+}
+
+void AppSplitTunnelingController::removeFolder(int index)
+{
+    if (index < 0 || index >= m_folders.size()) {
+        return;
+    }
+
+    m_folders.removeAt(index);
+    m_appSettingsRepository->setVpnAppFolders(m_currentRouteMode, m_folders);
+}
+
 void AppSplitTunnelingController::clearAppsList()
 {
     m_apps.clear();
@@ -45,6 +71,7 @@ void AppSplitTunnelingController::setRouteMode(AppsRouteMode routeMode)
 {
     m_currentRouteMode = routeMode;
     m_apps = m_appSettingsRepository->vpnApps(m_currentRouteMode);
+    m_folders = m_appSettingsRepository->vpnAppFolders(m_currentRouteMode);
     m_appSettingsRepository->setAppsRouteMode(routeMode);
 }
 
@@ -68,3 +95,7 @@ QVector<amnezia::InstalledAppInfo> AppSplitTunnelingController::getApps() const
     return m_apps;
 }
 
+QStringList AppSplitTunnelingController::getFolders() const
+{
+    return m_folders;
+}

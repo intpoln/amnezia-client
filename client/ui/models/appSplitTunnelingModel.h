@@ -2,6 +2,7 @@
 #define APPSPLITTUNNELINGMODEL_H
 
 #include <QAbstractListModel>
+#include <QStringList>
 #include <QVector>
 
 #include "core/utils/errorCodes.h"
@@ -16,7 +17,9 @@ public:
     enum Roles {
         AppPathRole = Qt::UserRole + 1,
         PackageAppNameRole,
-        PackageAppIconRole
+        PackageAppIconRole,
+        FullPathRole,
+        IsFolderRole
     };
 
     explicit AppSplitTunnelingModel(QObject *parent = nullptr);
@@ -26,13 +29,14 @@ public:
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 
 public slots:
-    void updateModel(const QVector<amnezia::InstalledAppInfo> &apps);
+    void updateModel(const QVector<amnezia::InstalledAppInfo> &apps, const QStringList &folders);
 
 protected:
     QHash<int, QByteArray> roleNames() const override;
 
 private:
     QVector<amnezia::InstalledAppInfo> m_apps;
+    QStringList m_folders;
 };
 
 #endif // APPSPLITTUNNELINGMODEL_H

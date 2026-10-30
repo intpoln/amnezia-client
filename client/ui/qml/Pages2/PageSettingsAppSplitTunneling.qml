@@ -31,6 +31,18 @@ PageType {
         }
     }
 
+    Connections {
+        target: AppSplitTunnelingController
+
+        function onFinished(message) {
+            PageController.showNotificationMessage(message)
+        }
+
+        function onErrorOccurred(errorMessage) {
+            PageController.showErrorMessage(errorMessage)
+        }
+    }
+
     readonly property var routeModes: [
         { type: 1, segmentName: qsTr("Via VPN"), name: qsTr("Only the apps from the list should have access via VPN") },
         { type: 2, segmentName: qsTr("Directly"), name: qsTr("Apps from the list should not have access via VPN") }
@@ -154,6 +166,22 @@ PageType {
 
                 visible: (Qt.platform.os === "windows") && root.pageEnabled
             }
+
+            ListItemType {
+                Layout.fillWidth: true
+                Layout.leftMargin: 16
+                Layout.rightMargin: 16
+                Layout.bottomMargin: 8
+
+                visible: Qt.platform.os === "windows"
+                enabled: root.pageEnabled
+
+                text: qsTr("Add folder")
+                subtitle: qsTr("All .exe files in the folder and its subfolders will bypass the VPN")
+                trailingIconSource: "qrc:/images/controls/plus.svg"
+
+                onClicked: folderDialog.open()
+            }
         }
 
         delegate: Item {
@@ -168,6 +196,7 @@ PageType {
                 anchors.rightMargin: 16
 
                 text: appPath
+                subtitle: isFolder ? qsTr("Folder: %1").arg(fullPath) : fullPath
                 trailingIconSource: "qrc:/images/controls/trash.svg"
 
                 onClicked: {
@@ -223,7 +252,7 @@ PageType {
 
                 if (Qt.platform.os === "windows") {
                     var fileName = SystemController.getFileName(qsTr("Open executable file"),
-                                                                qsTr("Executable files (*.*)"))
+                                                                qsTr("Executable files (*.exe)"))
                     if (fileName !== "") {
                         AppSplitTunnelingController.addApp(fileName)
                     }
@@ -238,5 +267,11 @@ PageType {
 
     InstalledAppsDrawer {
         id: installedAppDrawer
+    }
+
+    FolderDialog {
+        id: folderDialog
+
+        onAccepted: AppSplitTunnelingController.addFolder(selectedFolder)
     }
 }

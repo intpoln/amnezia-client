@@ -1,10 +1,19 @@
 #include "appSplitTunnelingUiController.h"
 
+#include <QDir>
 #include <QFileInfo>
+#include <QFutureWatcher>
+#include <QtConcurrent>
 
 #include "core/utils/errorCodes.h"
+#include "core/utils/folderExecutables.h"
 #include "core/utils/routeModes.h"
 #include "core/utils/commonStructs.h"
+
+namespace
+{
+    constexpr const int largeFolderExecutablesCount = 100;
+}
 
 AppSplitTunnelingUiController::AppSplitTunnelingUiController(AppSplitTunnelingController* appSplitTunnelingController,
                                                               AppSplitTunnelingModel* appSplitTunnelingModel,
@@ -13,7 +22,7 @@ AppSplitTunnelingUiController::AppSplitTunnelingUiController(AppSplitTunnelingCo
       m_appSplitTunnelingController(appSplitTunnelingController),
       m_appSplitTunnelingModel(appSplitTunnelingModel)
 {
-    m_appSplitTunnelingModel->updateModel(m_appSplitTunnelingController->getApps());
+    updateModel();
 }
 
 void AppSplitTunnelingUiController::addApp(const QString &appPath)
@@ -40,9 +49,43 @@ void AppSplitTunnelingUiController::addApps(QVector<QPair<QString, QString>> app
     emit finished(tr("The selected applications have been added"));
 }
 
+void AppSplitTunnelingUiController::addFolder(const QUrl &folderUrl)
+{
+    const QString folderPath = folderUrl.toLocalFile();
+    if (!m_appSplitTunnelingController->addFolder(folderPath)) {
+        emit errorOccurred(tr("The folder has already been added"));
+        return;
+    }
+
+    auto watcher = new QFutureWatcher<QStringList>(this);
+    connect(watcher, &QFutureWatcher<QStringList>::finished, this, [this, watcher, folderPath]() {
+        const int executablesCount = watcher->result().size();
+        watcher->deleteLater();
+
+        const QString nativePath = QDir::toNativeSeparators(folderPath);
+        if (executablesCount >= largeFolderExecutablesCount) {
+            emit finished(tr("Folder added: %1. It contains %2 executable files, all of them will bypass the VPN")
+                                  .arg(nativePath)
+                                  .arg(executablesCount));
+        } else {
+            emit finished(tr("Folder added: %1. Executable files found: %2").arg(nativePath).arg(executablesCount));
+        }
+    });
+    watcher->setFuture(QtConcurrent::run(&folderExecutables::find, folderPath));
+}
+
 void AppSplitTunnelingUiController::removeApp(const int index)
 {
     auto modelIndex = m_appSplitTunnelingModel->index(index);
+    const int appsCount = m_appSplitTunnelingController->getApps().size();
+    if (index >= appsCount) {
+        auto folderPath =
+                m_appSplitTunnelingModel->data(modelIndex, AppSplitTunnelingModel::Roles::FullPathRole).toString();
+        m_appSplitTunnelingController->removeFolder(index - appsCount);
+        emit finished(tr("Folder removed: %1").arg(folderPath));
+        return;
+    }
+
     auto appPath = m_appSplitTunnelingModel->data(modelIndex, AppSplitTunnelingModel::Roles::AppPathRole).toString();
     m_appSplitTunnelingController->removeApp(index);
 
@@ -74,6 +117,7 @@ bool AppSplitTunnelingUiController::isSplitTunnelingEnabled() const
 
 void AppSplitTunnelingUiController::updateModel()
 {
-    m_appSplitTunnelingModel->updateModel(m_appSplitTunnelingController->getApps());
+    m_appSplitTunnelingModel->updateModel(m_appSplitTunnelingController->getApps(),
+                                          m_appSplitTunnelingController->getFolders());
 }
 

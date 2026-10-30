@@ -30,6 +30,7 @@
     #include "platforms/ios/ios_controller.h"
 #endif
 
+#include "core/utils/folderExecutables.h"
 #include "core/utils/networkUtilities.h"
 #include "core/utils/serverConfigUtils.h"
 #include "vpnConnection.h"
@@ -502,9 +503,21 @@ void VpnConnection::appendSplitTunnelingConfig()
     if (m_appSettingsRepository->isAppsSplitTunnelingEnabled()) {
         appsRouteMode = m_appSettingsRepository->appsRouteMode();
 
-        auto apps = m_appSettingsRepository->vpnApps(appsRouteMode);
-        for (const auto &app : apps) {
-            appsJsonArray.append(app.appPath.isEmpty() ? app.packageName : app.appPath);
+        QStringList appPaths;
+        for (const auto &app : m_appSettingsRepository->vpnApps(appsRouteMode)) {
+            appPaths.append(app.appPath.isEmpty() ? app.packageName : app.appPath);
+        }
+
+        const QStringList folders = m_appSettingsRepository->vpnAppFolders(appsRouteMode);
+        const QStringList executables = folderExecutables::expand(appPaths, folders);
+        for (const auto &path : executables) {
+            appsJsonArray.append(path);
+        }
+
+        if (!folders.isEmpty()) {
+            qDebug() << QString("App split tunneling: %1 folders expanded, %2 executables in total")
+                                .arg(folders.size())
+                                .arg(executables.size());
         }
 
         if (appsJsonArray.isEmpty()) {
