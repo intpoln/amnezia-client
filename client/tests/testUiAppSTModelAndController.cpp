@@ -120,6 +120,12 @@ private slots:
         QCOMPARE(expanded.first(), dir.filePath("A.EXE"));
 
         QVERIFY(folderExecutables::find(dir.filePath("missing")).isEmpty());
+
+        QVERIFY(folderExecutables::hasDriveLetter(dir.path()));
+        QVERIFY(folderExecutables::hasDriveLetter("d:/Games"));
+        QVERIFY(!folderExecutables::hasDriveLetter("//server/share/Games"));
+        QVERIFY(!folderExecutables::hasDriveLetter("\\\\server\\share"));
+        QVERIFY(!folderExecutables::hasDriveLetter("Games"));
     }
 
     void testFolders()
@@ -155,6 +161,9 @@ private slots:
         uiController->addFolder(QUrl::fromLocalFile(dir.path().toUpper()));
         QCOMPARE(errorOccurredSpy.count(), 1);
 
+        uiController->addFolder(QUrl::fromLocalFile("//server/share/Games"));
+        QCOMPARE(errorOccurredSpy.count(), 2);
+
         auto repository = m_coreController->m_appSettingsRepository;
         QCOMPARE(repository->vpnAppFolders(AppsRouteMode::VpnAllExceptApps), QStringList({ dir.path() }));
         QCOMPARE(repository->vpnApps(AppsRouteMode::VpnAllExceptApps).size(), 1);
@@ -167,6 +176,39 @@ private slots:
         QCOMPARE(repository->vpnApps(AppsRouteMode::VpnAllExceptApps).size(), 1);
 
         uiController->removeApp(0);
+    }
+
+    void testFoldersClearedWithAppsList()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+
+        auto controller = m_coreController->m_appSplitTunnelingController;
+        auto repository = m_coreController->m_appSettingsRepository;
+        QVERIFY(controller->addFolder(dir.path()));
+
+        controller->clearAppsList();
+        QVERIFY(controller->getFolders().isEmpty());
+        QVERIFY(repository->vpnAppFolders(AppsRouteMode::VpnAllExceptApps).isEmpty());
+    }
+
+    void testFoldersOnRestore()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+
+        auto repository = m_coreController->m_appSettingsRepository;
+        repository->setVpnAppFolders(AppsRouteMode::VpnAllExceptApps, { dir.path() });
+        const QByteArray backupWithFolders = repository->backupAppConfig();
+        QVERIFY(QJsonDocument::fromJson(backupWithFolders).object().contains("Conf/ExceptAppsFolders"));
+
+        const QByteArray backupWithoutFolders =
+                QJsonDocument(QJsonObject { { "Conf/appsSplitTunnelingEnabled", true } }).toJson();
+        QVERIFY(repository->restoreAppConfig(backupWithoutFolders));
+        QVERIFY(repository->vpnAppFolders(AppsRouteMode::VpnAllExceptApps).isEmpty());
+
+        QVERIFY(repository->restoreAppConfig(backupWithFolders));
+        QCOMPARE(repository->vpnAppFolders(AppsRouteMode::VpnAllExceptApps), QStringList({ dir.path() }));
     }
 };
 

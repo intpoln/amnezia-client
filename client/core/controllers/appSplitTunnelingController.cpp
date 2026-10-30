@@ -65,6 +65,8 @@ void AppSplitTunnelingController::clearAppsList()
 {
     m_apps.clear();
     m_appSettingsRepository->setVpnApps(m_currentRouteMode, m_apps);
+    m_folders.clear();
+    m_appSettingsRepository->setVpnAppFolders(m_currentRouteMode, m_folders);
 }
 
 void AppSplitTunnelingController::setRouteMode(AppsRouteMode routeMode)

@@ -52,6 +52,10 @@ void AppSplitTunnelingUiController::addApps(QVector<QPair<QString, QString>> app
 void AppSplitTunnelingUiController::addFolder(const QUrl &folderUrl)
 {
     const QString folderPath = folderUrl.toLocalFile();
+    if (!folderExecutables::hasDriveLetter(folderPath)) {
+        emit errorOccurred(tr("Network folders are not supported, choose a folder on a local drive"));
+        return;
+    }
     if (!m_appSplitTunnelingController->addFolder(folderPath)) {
         emit errorOccurred(tr("The folder has already been added"));
         return;
@@ -63,7 +67,12 @@ void AppSplitTunnelingUiController::addFolder(const QUrl &folderUrl)
         watcher->deleteLater();
 
         const QString nativePath = QDir::toNativeSeparators(folderPath);
-        if (executablesCount >= largeFolderExecutablesCount) {
+        if (executablesCount >= folderExecutables::maxExecutables) {
+            emit finished(tr("Folder added: %1. It has too many executable files, only the first %2 found will bypass "
+                             "the VPN")
+                                  .arg(nativePath)
+                                  .arg(folderExecutables::maxExecutables));
+        } else if (executablesCount >= largeFolderExecutablesCount) {
             emit finished(tr("Folder added: %1. It contains %2 executable files, all of them will bypass the VPN")
                                   .arg(nativePath)
                                   .arg(executablesCount));

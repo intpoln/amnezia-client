@@ -217,6 +217,11 @@ namespace {
         }
         return QString();
     }
+
+    QString appFoldersKey(AppsRouteMode mode)
+    {
+        return "Conf/" + appsRouteModeString(mode) + "Folders";
+    }
 }
 
 AppsRouteMode SecureAppSettingsRepository::appsRouteMode() const
@@ -262,7 +267,7 @@ void SecureAppSettingsRepository::setVpnApps(AppsRouteMode mode, const QVector<I
 QStringList SecureAppSettingsRepository::vpnAppFolders(AppsRouteMode mode) const
 {
     QStringList folders;
-    const auto foldersArray = value("Conf/" + appsRouteModeString(mode) + "Folders").toJsonArray();
+    const auto foldersArray = value(appFoldersKey(mode)).toJsonArray();
     for (const auto &folder : foldersArray) {
         folders.append(folder.toString());
     }
@@ -271,7 +276,7 @@ QStringList SecureAppSettingsRepository::vpnAppFolders(AppsRouteMode mode) const
 
 void SecureAppSettingsRepository::setVpnAppFolders(AppsRouteMode mode, const QStringList &folders)
 {
-    setValue("Conf/" + appsRouteModeString(mode) + "Folders", QJsonArray::fromStringList(folders));
+    setValue(appFoldersKey(mode), QJsonArray::fromStringList(folders));
     emit appsChanged(mode);
 }
 
@@ -538,7 +543,18 @@ QByteArray SecureAppSettingsRepository::backupAppConfig() const
 
 bool SecureAppSettingsRepository::restoreAppConfig(const QByteArray &cfg)
 {
-    return m_settings->restoreAppConfig(cfg);
+    if (!m_settings->restoreAppConfig(cfg)) {
+        return false;
+    }
+
+    const QJsonObject restoredConfig = QJsonDocument::fromJson(cfg).object();
+    for (const auto mode : { AppsRouteMode::VpnOnlyForwardApps, AppsRouteMode::VpnAllExceptApps }) {
+        if (!restoredConfig.contains(appFoldersKey(mode)) && !vpnAppFolders(mode).isEmpty()) {
+            setVpnAppFolders(mode, {});
+        }
+    }
+
+    return true;
 }
 
 void SecureAppSettingsRepository::clearSettings()

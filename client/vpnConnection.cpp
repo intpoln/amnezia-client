@@ -498,6 +498,15 @@ void VpnConnection::appendSplitTunnelingConfig()
     m_vpnConfiguration.insert(configKey::splitTunnelType, routeMode);
     m_vpnConfiguration.insert(configKey::splitTunnelSites, sitesJsonArray);
 
+    qDebug() << QString("Site split tunneling is %1, route mode is %2")
+                        .arg(m_appSettingsRepository->isSitesSplitTunnelingEnabled() ? "enabled" : "disabled")
+                        .arg(routeMode);
+
+    appendAppSplitTunnelingConfig();
+}
+
+void VpnConnection::appendAppSplitTunnelingConfig()
+{
     amnezia::AppsRouteMode appsRouteMode = amnezia::AppsRouteMode::VpnAllApps;
     QJsonArray appsJsonArray;
     if (m_appSettingsRepository->isAppsSplitTunnelingEnabled()) {
@@ -528,9 +537,6 @@ void VpnConnection::appendSplitTunnelingConfig()
     m_vpnConfiguration.insert(configKey::appSplitTunnelType, appsRouteMode);
     m_vpnConfiguration.insert(configKey::splitTunnelApps, appsJsonArray);
 
-    qDebug() << QString("Site split tunneling is %1, route mode is %2")
-                        .arg(m_appSettingsRepository->isSitesSplitTunnelingEnabled() ? "enabled" : "disabled")
-                        .arg(routeMode);
     qDebug() << QString("App split tunneling is %1, route mode is %2")
                         .arg(m_appSettingsRepository->isAppsSplitTunnelingEnabled() ? "enabled" : "disabled")
                         .arg(appsRouteMode);
@@ -582,6 +588,8 @@ void VpnConnection::reconnectToVpn() {
     setConnectionState(Vpn::ConnectionState::Reconnecting);
 
     m_vpnProtocol->stop();
+    appendAppSplitTunnelingConfig();
+    m_vpnProtocol->setAppSplitTunnelingConfig(m_vpnConfiguration);
     if (ErrorCode err = m_vpnProtocol->start(); err != ErrorCode::NoError) {
         setConnectionState(Vpn::ConnectionState::Error);
         emit vpnProtocolError(err);

@@ -108,6 +108,16 @@
     </message>
     <message>
         <location filename="../ui/controllers/appSplitTunnelingUiController.cpp"/>
+        <source>Network folders are not supported, choose a folder on a local drive</source>
+        <translation>Сетевые папки не поддерживаются, выберите папку на локальном диске</translation>
+    </message>
+    <message>
+        <location filename="../ui/controllers/appSplitTunnelingUiController.cpp"/>
+        <source>Folder added: %1. It has too many executable files, only the first %2 found will bypass the VPN</source>
+        <translation>Папка добавлена: %1. В ней слишком много исполняемых файлов, в обход VPN будут работать только первые %2 найденных</translation>
+    </message>
+    <message>
+        <location filename="../ui/controllers/appSplitTunnelingUiController.cpp"/>
         <source>The folder has already been added</source>
         <translation>Папка уже была добавлена</translation>
     </message>

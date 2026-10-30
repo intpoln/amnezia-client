@@ -8,6 +8,7 @@ namespace folderExecutables
 {
     constexpr const int maxExecutables = 10000;
 
+    bool hasDriveLetter(const QString &folderPath);
     QStringList find(const QString &folderPath);
     QStringList expand(const QStringList &appPaths, const QStringList &folderPaths);
 };

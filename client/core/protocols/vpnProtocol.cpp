@@ -1,6 +1,7 @@
 #include <QDebug>
 #include <QTimer>
 
+#include "core/utils/constants/configKeys.h"
 #include "core/utils/errorStrings.h"
 #include "vpnProtocol.h"
 
@@ -48,6 +49,12 @@ void VpnProtocol::setLastError(ErrorCode lastError)
         setConnectionState(Vpn::ConnectionState::Error);
     }
     qCritical().noquote() << "VpnProtocol error, code" << m_lastError << errorString(m_lastError);
+}
+
+void VpnProtocol::setAppSplitTunnelingConfig(const QJsonObject &configuration)
+{
+    m_rawConfig.insert(configKey::appSplitTunnelType, configuration.value(configKey::appSplitTunnelType));
+    m_rawConfig.insert(configKey::splitTunnelApps, configuration.value(configKey::splitTunnelApps));
 }
 
 ErrorCode VpnProtocol::lastError() const

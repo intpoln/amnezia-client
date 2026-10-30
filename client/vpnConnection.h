@@ -95,6 +95,7 @@ private:
    void createProtocolConnections();
 
    void appendSplitTunnelingConfig();
+   void appendAppSplitTunnelingConfig();
    void appendKillSwitchConfig();
 };
 

@@ -1,9 +1,16 @@
 #include "folderExecutables.h"
 
+#include <QDebug>
 #include <QDir>
 #include <QDirIterator>
 #include <QFileInfo>
 #include <QSet>
+
+bool folderExecutables::hasDriveLetter(const QString &folderPath)
+{
+    const QString cleanPath = QDir::cleanPath(folderPath);
+    return cleanPath.size() >= 2 && cleanPath.at(0).isLetter() && cleanPath.at(1) == QLatin1Char(':');
+}
 
 QStringList folderExecutables::find(const QString &folderPath)
 {
@@ -24,6 +31,12 @@ QStringList folderExecutables::find(const QString &folderPath)
                 executables.append(info.filePath());
             }
         }
+    }
+
+    if (executables.size() >= maxExecutables) {
+        qWarning() << QString("App split tunneling: scan of %1 stopped at %2 executables")
+                              .arg(QDir::toNativeSeparators(folderPath))
+                              .arg(maxExecutables);
     }
 
     return executables;
