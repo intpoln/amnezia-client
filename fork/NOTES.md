@@ -67,7 +67,9 @@ fork\scripts\local-build.bat --installer ifw
   tools/venv/Scripts/aqt install-tool windows desktop tools_ifw -O tools/Qt
   ```
 - WiX локально не ставим, `.msi` собирает только CI.
-- Первая сборка долгая: Conan собирает часть зависимостей (OpenSSL и другие) из исходников.
+- Unit-тесты: `fork\scripts\local-test.bat` (см. [TESTING.md](TESTING.md)).
+- Первая сборка долгая (около часа): готовые пакеты на `artifactory.amnezia.org` собраны под MSVC 19.51 (`compiler.version=195`, как в CI), а локально стоит VS Build Tools 2022 с MSVC 19.44 (`194`). Поэтому OpenSSL и OpenVPN собираются из исходников. Результат кэшируется в `tools/conan_home`, следующие сборки быстрые.
+- Баг upstream в `deploy\build.bat`: `VS_INSTALLER_PATH` задаётся и раскрывается через `%...%` в одном блоке `( )`, поэтому без заранее заданной переменной vcvars не вызывается. Тогда сборка OpenVPN падает с `No message compiler found` (`mc.exe` из Windows SDK не в `PATH`). `local-build.bat` задаёт `VS_INSTALLER_PATH` заранее. В CI баг не виден, там окружение MSVC настроено до сборки.
 - Конфигурация собирается в `deploy\build`, тесты лежат в `deploy\build\client\tests`.
 - Готовые зависимости Conan скачиваются с `artifactory.amnezia.org` без авторизации.
 - Без `PROD_AGW_PUBLIC_KEY` не работает только Premium/Free, это нормально.

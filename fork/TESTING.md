@@ -22,8 +22,10 @@
 ### 1. Unit-тесты (агент)
 ```bat
 fork\scripts\local-build.bat
-ctest --test-dir deploy\build\client\tests -C Release -R "<TestName>" --output-on-failure
+fork\scripts\local-test.bat
+fork\scripts\local-test.bat "^UiAppSTModelAndControllerTest$"
 ```
+- Без аргумента `local-test.bat` запускает тот же набор безопасных тестов, что и CI. С аргументом — тесты по regex `ctest -R`.
 - Для этой работы важны тесты `UiAppSTModelAndControllerTest` (`client/tests/testUiAppSTModelAndController.cpp`) и `SettingsSignalsTest`.
 - Новая логика (сканер папок, хранение правил-папок) покрывается новыми тестами в `client/tests/`.
 - Тесты, которым нужны секреты (`THIRD_PARTY_*`, `AMNEZIA_TEST_API_KEY`) или реальный VPN, не запускаем. Список безопасных тестов есть в `.github/workflows/fork-windows.yml`.
