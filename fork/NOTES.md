@@ -13,7 +13,8 @@
 ## Карта кода: раздельное туннелирование приложений (Windows)
 - **UI:** `client/ui/qml/Pages2/PageSettingsAppSplitTunneling.qml`
   - около строки 25: страница заблокирована при активном подключении;
-  - около строки 224: на Windows кнопка «+» вызывает `SystemController.getFileName(...)`.
+  - около строки 253: на Windows кнопка «+» вызывает `SystemController.getFileName(...)`;
+  - кнопка «Добавить папку» в шапке списка открывает `FolderDialog`.
 - **Диалог выбора файла:** `client/ui/qml/main2.qml` около строки 329 (`FileDialog`), `client/ui/controllers/systemController.cpp` около строки 110. Ждёт результат во вложенном `QEventLoop`.
 - **UI-контроллер:** `client/ui/controllers/appSplitTunnelingUiController.cpp`. `addApp(path)` создаёт `InstalledAppInfo{appName, packageName="", appPath}`.
 - **Core-контроллер:** `client/core/controllers/appSplitTunnelingController.cpp`, проверка дублей и сохранение.
@@ -25,6 +26,7 @@
   - WG/AWG: `client/mozilla/localsocketcontroller.cpp`, JSON `vpnDisabledApps` по `\\.\pipe\amneziavpn`, далее `client/daemon/daemon.cpp`;
   - OpenVPN/Xray: QtRO `enablePeerTraffic` → `service/server/killswitch.cpp` около строк 229–297.
 - **Применение:** `client/platforms/windows/daemon/windowsdaemon.cpp` (`activateSplitTunnel`, около строки 64) → `client/platforms/windows/daemon/windowssplittunnel.cpp`. Там `excludeApps()` (около строки 293), перевод путей в `\Device\HarddiskVolumeN\...` в `convertPath()`, IOCTL драйвера.
+- **Папки (форк):** сканер `client/core/utils/folderExecutables.cpp` (`find`, `expand`). Хранение в `Conf/ExceptAppsFolders` (`vpnAppFolders`/`setVpnAppFolders` в `secureAppSettingsRepository.cpp`). В модели папки идут строками после приложений (роли `isFolder`, `fullPath`), поэтому `removeApp(index)` в UI-контроллере удаляет папку при `index >= числа приложений`. Разворот в exe в `appendSplitTunnelingConfig()`, в лог пишется число папок и exe.
 - **Тесты:** `client/tests/testUiAppSTModelAndController.cpp`.
 
 ## Драйвер Mullvad: что важно знать
