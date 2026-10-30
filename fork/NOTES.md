@@ -4,7 +4,7 @@
 
 ## Правила работы в форке
 1. **Только Windows.** Android-код (`client/android/`, `client/platforms/android/`) не меняем.
-2. **На основном ПК не запускаем VPN**: ни собранный клиент, ни службу, ни драйвер. Подробности в [TESTING.md](TESTING.md). Агент собирает проект и гоняет unit-тесты, а реальное подключение проверяет пользователь в ВМ.
+2. **На основном ПК не запускаем VPN**: ни собранный клиент, ни службу, ни драйвер. Подробности в [TESTING.md](TESTING.md). Агент собирает проект и гоняет unit-тесты. Реальное подключение проверяет пользователь: выключает официальный клиент и ставит сборку форка. ВМ нет.
 3. **Стиль upstream:** правила из `AGENTS.md` действуют (без комментариев в коде, DRY, Controls2, `qsTr`, `.clang-format`, без абсолютных локальных путей и секретов в репозитории).
 4. **Коммиты** делаются в `feat/*`, `fix/*` или `custom` (не в `dev`), с префиксом `feat(...)`/`fix(...)`/`docs(fork)`/`ci(fork)`. **Push** только по просьбе пользователя.
 5. **После каждой задачи обновлять** [STATUS.md](STATUS.md), чекбоксы в [PLAN.md](PLAN.md), а при новых решениях и [DECISIONS.md](DECISIONS.md).
@@ -48,21 +48,26 @@
 - Полезные открытые PR в upstream: #3344, #3099 (драйвер), #3114 (большие списки маршрутов), #3313 (переподключение), #2431 (блокировки UI).
 
 ## Локальная сборка
-Состояние инструментов на ПК пользователя (2026-10-30):
-- есть VS Build Tools 2022 и Python 3.13;
-- нет Qt, CMake, Conan, Ninja.
+Всё нужное для сборки, кроме VS Build Tools 2022, лежит в папке `tools/` **рядом с репозиторием** (не в нём). В систему ничего не ставится:
+- `tools/venv`: Python venv с Conan 2.28.0, CMake, Ninja, aqtinstall 3.3.0;
+- `tools/Qt/6.10.1/msvc2022_64` и `tools/Qt/Tools/QtInstallerFramework`;
+- `tools/conan_home`: кэш Conan (`CONAN_HOME`), туда же собираются зависимости.
 
-Порядок установки (выполнять после согласия пользователя на скачивание):
-```bash
-pip install "conan==2.28.0" cmake ninja "aqtinstall==3.3.0"
-aqt install-qt windows desktop 6.10.1 win64_msvc2022_64 -m qtremoteobjects qt5compat qtshadertools qthttpserver qtwebsockets -O <QT_DIR>
-```
-Затем в «x64 Native Tools Command Prompt for VS 2022»:
+Сборка (из корня репозитория, обычный `cmd`, окружение MSVC `deploy\build.bat` настраивает сам):
 ```bat
-set QT_INSTALL_DIR=<QT_DIR>
-set AMNEZIA_BUILD_TESTS=ON
-deploy\build.bat
+fork\scripts\local-build.bat
+fork\scripts\local-build.bat --installer ifw
 ```
+- Скрипт выставляет `PATH`, `CONAN_HOME`, `QT_INSTALL_DIR`, `AMNEZIA_BUILD_TESTS=ON` и вызывает `deploy\build.bat` со всеми аргументами. Другая папка инструментов задаётся переменной `AMNEZIA_TOOLS`.
+- Восстановить `tools/` с нуля:
+  ```bash
+  python -m venv tools/venv
+  tools/venv/Scripts/pip install --no-cache-dir "conan==2.28.0" cmake ninja "aqtinstall==3.3.0"
+  tools/venv/Scripts/aqt install-qt windows desktop 6.10.1 win64_msvc2022_64 -m qtremoteobjects qt5compat qtshadertools qthttpserver qtwebsockets -O tools/Qt
+  tools/venv/Scripts/aqt install-tool windows desktop tools_ifw -O tools/Qt
+  ```
+- WiX локально не ставим, `.msi` собирает только CI.
+- Первая сборка долгая: Conan собирает часть зависимостей (OpenSSL и другие) из исходников.
 - Конфигурация собирается в `deploy\build`, тесты лежат в `deploy\build\client\tests`.
 - Готовые зависимости Conan скачиваются с `artifactory.amnezia.org` без авторизации.
 - Без `PROD_AGW_PUBLIC_KEY` не работает только Premium/Free, это нормально.
@@ -71,3 +76,4 @@ deploy\build.bat
 Сюда добавляются неочевидные вещи, найденные в ходе работы: дата и одна-две строки.
 - 2026-10-30: unit-тесты пишут настройки под отдельной тестовой организацией (`SecureQSettings(testOrg, ...)`), поэтому реальные настройки установленного AmneziaVPN не трогают. Тест `ConnectionTest` и тесты из `testUtils.cpp` берут секреты `THIRD_PARTY_*` из окружения, в форке их не запускаем.
 - 2026-10-30: `deploy.yml` из upstream в форке отключён: его jobs `android-runner` и `Bake-Prebuilts` с секретами в форке не работают. Вместо него `fork-windows.yml`.
+- 2026-10-30: `.gitignore` upstream игнорирует `*build-*`, поэтому скрипты с именами вида `build-xxx` не попадут в git. Скрипт сборки назван `local-build.bat`.
