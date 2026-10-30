@@ -9,6 +9,9 @@
 - **Блокеры:** нет.
 
 ## Журнал
+### 2026-10-31
+- Локальная сборка прошла, 13 из 13 unit-тестов. Обойдён баг upstream в `deploy/build.bat` (vcvars не вызывался), подробности в [NOTES.md](NOTES.md). Добавлен `fork/scripts/local-test.bat`.
+
 ### 2026-10-30
 - Исследование: [research/REPORT.md](research/REPORT.md), [research/codex_report.md](research/codex_report.md).
 - Создан форк `intpoln/amnezia-client`, ветка `custom` от upstream `dev` (`7f9b7db`, версия 5.1.0.5).
@@ -16,6 +19,3 @@
 - Инструменты сборки установлены в `tools/` рядом с репозиторием, без установки в систему. Скрипт `fork/scripts/local-build.bat`.
 - Решено: ВМ не будет. Реальное подключение пользователь проверяет сам, временно заменяя официальный клиент сборкой форка ([TESTING.md](TESTING.md)).
 - Первый прогон CI `Fork Windows build` успешен: установщики `.exe` и `.msi` (5.1.0.5), 13 из 13 unit-тестов.
-
-### 2026-10-31
-- Локальная сборка прошла, 13 из 13 unit-тестов. Обойдён баг upstream в `deployuild.bat` (vcvars не вызывался), подробности в [NOTES.md](NOTES.md). Добавлен `fork/scripts/local-test.bat`.
