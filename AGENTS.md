@@ -2,6 +2,12 @@
 
 Operating guide for this repository. Read it before changing anything.
 
+> **This is a personal fork (intpoln/amnezia-client).** Before any work read
+> `fork/README.md` and `fork/NOTES.md`; keep `fork/STATUS.md` and
+> `fork/PLAN.md` up to date. Fork scope: Windows only (do not touch Android).
+> Never launch the built client, install its service or connect a VPN on the
+> user's PC: the official AmneziaVPN runs there (see `fork/TESTING.md`).
+
 ## Project Overview
 
 AmneziaVPN is a cross-platform VPN client built with C++ and Qt Quick (QML) for
