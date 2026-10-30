@@ -6,7 +6,7 @@
 - [x] Форк `intpoln/amnezia-client`, remotes `origin`/`upstream`, ветки `dev` (зеркало) и `custom`
 - [x] Документация `fork/`, ссылка на неё в `AGENTS.md`
 - [x] CI для Windows в форке (`fork-windows.yml`), upstream `deploy.yml` отключён
-- [ ] Первый успешный прогон CI: установщик и unit-тесты
+- [x] Первый успешный прогон CI: установщики `.exe` и `.msi`, 13 из 13 unit-тестов
 - [x] Локальные инструменты в `tools/` рядом с репозиторием: Qt 6.10.1, Qt IFW, CMake, Conan 2.28, Ninja; скрипт `fork/scripts/local-build.bat`
 - [ ] Локальная сборка и `ctest` проходят
 
