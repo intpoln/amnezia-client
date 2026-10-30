@@ -4,7 +4,7 @@
 
 ## Сейчас
 - **Этап:** 1 (папки в исключениях). Код в ветке `feat/folder-exclusion`, собран локально, unit-тесты проходят.
-- **В работе:** ручная проверка пользователем по локальному установщику IFW (`deploy/build/AmneziaVPN_5.1.0.5_windows_x64.exe`, коммит `e664e25e`), чек-лист «Исключение папок» в [TESTING.md](TESTING.md).
+- **В работе:** ручная проверка пользователем по локальному установщику IFW (`deploy/build/AmneziaVPN_5.1.0.5_windows_x64.exe`, коммит `60b71e00`, с ключом Premium), чек-листы «Исключение папок» и «Premium» в [TESTING.md](TESTING.md).
 - **Не сделано в этапе 1:** 1.1a, 1.3a, 1.6, 1.9, 1.10 (см. [PLAN.md](PLAN.md)).
 - **Ждёт пользователя:** секреты `PROD_AGW_PUBLIC_KEY`, `PROD_S3_ENDPOINT`, `FALLBACK_S3_ENDPOINT` в GitHub, чтобы Premium работал и в сборках CI (как добавить — в [NOTES.md](NOTES.md#ключ-шлюза-premium)).
 - **Блокеры:** нет.
