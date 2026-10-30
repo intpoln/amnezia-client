@@ -78,6 +78,9 @@ jobs:
       env:
         QT_INSTALL_DIR: ${{ runner.temp }}
         AMNEZIA_BUILD_TESTS: ON
+        PROD_AGW_PUBLIC_KEY: ${{ secrets.PROD_AGW_PUBLIC_KEY }}
+        PROD_S3_ENDPOINT: ${{ secrets.PROD_S3_ENDPOINT }}
+        FALLBACK_S3_ENDPOINT: ${{ secrets.FALLBACK_S3_ENDPOINT }}
       run: |
         set WIX_ROOT_PATH="${{ env.USERPROFILE }}\.dotnet\tools"
         deploy\build.bat --installer all

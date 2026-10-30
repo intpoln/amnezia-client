@@ -16,6 +16,11 @@ set "QT_VERSION=6.10.1"
 set "AMNEZIA_BUILD_TESTS=ON"
 :: deploy\build.bat expands VS_INSTALLER_PATH in the same block that sets it, so vcvars is skipped unless it is preset
 if not defined VS_INSTALLER_PATH set "VS_INSTALLER_PATH=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
+if exist "%AMNEZIA_TOOLS%\agw\gateway-env.bat" (
+    call "%AMNEZIA_TOOLS%\agw\gateway-env.bat"
+) else (
+    echo WARNING: "%AMNEZIA_TOOLS%\agw\gateway-env.bat" not found, Amnezia Premium will not work in this build. See fork\NOTES.md.
+)
 
 cd /d "%REPO_DIR%"
 call deploy\build.bat %*

@@ -74,7 +74,14 @@ fork\scripts\local-build.bat --installer ifw
 - Баг upstream в `deploy\build.bat`: `VS_INSTALLER_PATH` задаётся и раскрывается через `%...%` в одном блоке `( )`, поэтому без заранее заданной переменной vcvars не вызывается. Тогда сборка OpenVPN падает с `No message compiler found` (`mc.exe` из Windows SDK не в `PATH`). `local-build.bat` задаёт `VS_INSTALLER_PATH` заранее. В CI баг не виден, там окружение MSVC настроено до сборки.
 - Конфигурация собирается в `deploy\build`, тесты лежат в `deploy\build\client\tests`.
 - Готовые зависимости Conan скачиваются с `artifactory.amnezia.org` без авторизации.
-- Без `PROD_AGW_PUBLIC_KEY` не работает только Premium/Free, это нормально.
+- `local-build.bat` вызывает `tools/agw/gateway-env.bat`, если он есть. Без него сборка проходит, но Premium/Free не работают (см. ниже).
+
+## Ключ шлюза Premium
+- Клиент берёт три значения из окружения сборки (`client/CMakeLists.txt`): `PROD_AGW_PUBLIC_KEY` (PEM), `PROD_S3_ENDPOINT` и `FALLBACK_S3_ENDPOINT` (списки адресов, `GatewayController` разбирает их через `splitEndpoints`). Остальные (`DEV_*`, `FREE_V2_ENDPOINT`, `PREM_V1_ENDPOINT`) в прод-режиме не нужны. Адрес шлюза по умолчанию прописан в коде.
+- **Откуда:** из официального `AmneziaVPN.exe`. В `.rdata` два PEM-ключа, dev и prod. Выбор в `GatewayController` скомпилирован в `lea rax,[dev]; lea rdx,[prod]; test bl,bl; cmovne rdx,rax`, то есть prod грузится в `rdx` по умолчанию. Списки S3 — две строки, на которые ссылается ветка не-dev после этого выбора: первая — основной список, вторая — запасной. Искать через `dumpbin /disasm:nobytes`: `cmovne` рядом со ссылками на оба PEM.
+- **Локально:** `tools/agw/gateway-env.bat`, три строки `set "ИМЯ=значение"`. Переводы строк в PEM записаны как `\n`: значение уходит в `-D` define, и компилятор превращает их в переводы строк.
+- **CI:** в репозитории форка на GitHub: Settings → Secrets and variables → Actions → New repository secret. Три секрета с теми же именами и значениями из `gateway-env.bat` (ключ — одной строкой с `\n`, как в файле). `fork-windows.yml` передаёт их в шаг сборки. Без секретов CI собирает клиент без Premium.
+- Значения не коммитить и не выводить в чат или логи.
 
 ## Журнал находок
 Сюда добавляются неочевидные вещи, найденные в ходе работы: дата и одна-две строки.
