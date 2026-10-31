@@ -6,7 +6,7 @@
 1. **Только Windows.** Android-код (`client/android/`, `client/platforms/android/`) не меняем.
 2. **На основном ПК не запускаем VPN**: ни собранный клиент, ни службу, ни драйвер. Подробности в [TESTING.md](TESTING.md). Агент собирает проект и гоняет unit-тесты. Реальное подключение проверяет пользователь: выключает официальный клиент и ставит сборку форка. ВМ нет.
 3. **Стиль upstream:** правила из `AGENTS.md` действуют (без комментариев в коде, DRY, Controls2, `qsTr`, `.clang-format`, без абсолютных локальных путей и секретов в репозитории).
-4. **Коммиты** делаются в `feat/*`, `fix/*` или `custom` (не в `dev`), с префиксом `feat(...)`/`fix(...)`/`docs(fork)`/`ci(fork)`. **Push** только по просьбе пользователя.
+4. **Коммиты** делаются в `feat/*`, `fix/*` или `custom` (не в `dev`), с префиксом `feat(...)`/`fix(...)`/`docs(fork)`/`ci(fork)`. Пользователь просит коммитить по ходу работы и пушить ветку задачи в `origin` (на push запускается CI).
 5. **После каждой задачи обновлять** [STATUS.md](STATUS.md), чекбоксы в [PLAN.md](PLAN.md), а при новых решениях и [DECISIONS.md](DECISIONS.md).
 6. **Переводы.** Новые строки идут через `qsTr`. Для форка нужен как минимум русский перевод в `client/translations/amneziavpn_ru_RU.ts`. Остальные языки можно оставить без перевода: правило upstream «все языки заполнены» в форке ослаблено.
 
@@ -39,15 +39,23 @@
 - DNS исключённых приложений идёт через `dnscache`, то есть через туннель.
 - Не работает рядом с установленным Mullvad VPN (`detectConflict`).
 
-## Известные проблемы стабильности (кандидаты на этап 2)
-- `client/vpnConnection.cpp` около строки 126: на Connected вызывается `resetIpStack()`, а служба выполняет `netsh int ip reset` и `netsh winsock reset` (`service/server/router_win.cpp` около строки 291). Синхронно, при каждом подключении.
-- `VpnProtocol::startTimeoutTimer()` (`client/core/protocols/vpnProtocol.cpp:66`) нигде не вызывается, поэтому таймаута подключения нет.
-- `client/mozilla/localsocketcontroller.cpp` около строк 466–497: ошибки split tunnel только пишутся в лог (`REPORTERROR` закомментирован).
-- `windowstunnelservice.cpp:287`, `windowsservicemanager.cpp:70`: циклы ожидания со `Sleep(1000)`.
-- `ConnectionController::lastConnectionError()` читает `m_vpnProtocol` из другого потока. Гонка, возможен вылет.
-- `vpnConnection.cpp` около строки 386: `connect` на `networkChanged`/`wakeup` повторяется при каждом подключении, без `Qt::UniqueConnection`.
-- Служба однопоточная: одна медленная операция блокирует все остальные.
-- Полезные открытые PR в upstream: #3344, #3099 (драйвер), #3114 (большие списки маршрутов), #3313 (переподключение), #2431 (блокировки UI).
+## Карта кода: подключение и стабильность (этап 2)
+- **Потоки.** `VpnConnection` живёт в своём `QThread` (`amneziaApplication.cpp`, `m_vpnConnectionThread`), `ConnectionController` и UI — в главном. Всё, что UI читает у `VpnConnection`, передаётся сигналом, а не чтением полей из другого потока.
+- **Состояние.** `VpnConnection::setConnectionState` сначала отправляет состояние в UI (`connectionStateChanged`), потом делает вызовы службы (`onConnectionStateChanged`: DNS, маршруты). Disconnected во время Reconnecting в UI не уходит, но вызовы службы для него выполняются.
+- **Вызовы службы без ожидания.** `VpnConnection::watchIpcReply(reply, message)` вешает `QRemoteObjectPendingCallWatcher` и пишет предупреждение при ошибке. `waitForFinished()` в `vpnConnection.cpp` не использовать: вложенный цикл событий приводил к переполнению стека (см. комментарий в `addSitesRoutes`). Синхронные вызовы остались в `xrayProtocol.cpp` и `ipcClient.cpp`.
+- **Таймаут подключения.** `connectionTimeoutMsec = 40000` в `vpnConnection.cpp`. Таймер `m_connectionTimeoutTimer` идёт в Connecting и Reconnecting (только desktop), по таймауту `onConnectionTimeout` ставит ошибку `ConnectionTimeoutError` и останавливает протокол.
+- **Ошибки форка** в `errorCodes.h` с номера 750: `ConnectionTimeoutError` (750), `TunnelError` (751), `SplitTunnelDriverError` (752). Тексты в `errorStrings.cpp`, перевод в `amneziavpn_ru_RU.ts`.
+- **Ошибка до UI.** При переходе в Error `VpnConnection` шлёт `lastErrorChanged(error)` перед `connectionStateChanged`, `ConnectionController` хранит её в `m_lastConnectionError`, `lastConnectionError()` отдаёт сохранённое значение.
+- **Ошибки службы WG/AWG.** Служба шлёт JSON `backendFailure` с `DaemonError` (`daemonlocalserverconnection.cpp`, в том числе при неверном конфиге и неудачной активации). `LocalSocketController` превращает его в сигнал `ControllerImpl::backendFailure(DaemonError)`, `WireguardProtocol` ставит `SplitTunnelDriverError` для ошибок split tunnel и `TunnelError` для остальных.
+- **Замеры.** В логе клиента строки `Connection timing: <этап> at N ms` (от начала подключения, переподключения или отключения) и `state <S>, service calls took N ms`. В логе службы `Interface activated in N ms`, `The service reached the status in N ms`.
+- **Смена сети и сон (служба).** `client/platforms/windows/windowsnetworkwatcher.cpp`:
+  - окно `PowerMonitorClass` ловит `PBT_APMRESUMESUSPEND` и шлёт `wakeup`; создаётся до WLAN, поэтому работает и на ПК без Wi-Fi;
+  - `NotifyRouteChange2` следит за маршрутами `0.0.0.0/0`. Через 2 с после изменений (`checkNetwork`) сравнивается подпись «LUID + шлюз» маршрутов по умолчанию на физических адаптерах (`HardwareInterface`, `IfOperStatusUp`). Адаптеры VPN (wintun, TAP) не физические, поэтому подключение VPN переподключения не вызывает. Пустая подпись (сеть пропала) не запоминается;
+  - смена BSSID Wi-Fi идёт через ту же задержку, поэтому одно событие сети даёт один `networkChanged`.
+  Сигналы уходят в клиент через `IpcServer` (`service/server/localserver.cpp`), клиент вызывает `reconnectToVpn` (`Qt::UniqueConnection`).
+- **IP адаптеров для драйвера (2.7).** Переподключение заново выполняет `activate` в службе, а он заново определяет физический адаптер и передаёт драйверу его IP. Отдельно обновлять IP не нужно. Не покрыт случай, когда DHCP меняет IP того же адаптера без смены маршрута по умолчанию.
+- **Служба однопоточная:** одна медленная операция блокирует все остальные.
+- **Перенесено из upstream (2.9):** PR #3344, #3099, #3114 взяты коммитами с `-x` (в сообщении ссылка на исходный коммит), из #3313 часть (`windowstunnelpipe.h`, `LocalServer::shutdown`). Когда upstream их примет, при merge `dev` конфликты в этих местах разрешать в пользу upstream. Подробности в [DECISIONS.md](DECISIONS.md).
 
 ## Локальная сборка
 Всё нужное для сборки, кроме VS Build Tools 2022, лежит в папке `tools/` **рядом с репозиторием** (не в нём). В систему ничего не ставится:
@@ -88,4 +96,6 @@ fork\scripts\local-build.bat --installer ifw
 - 2026-10-30: unit-тесты пишут настройки под отдельной тестовой организацией (`SecureQSettings(testOrg, ...)`), поэтому реальные настройки установленного AmneziaVPN не трогают. Тест `ConnectionTest` и тесты из `testUtils.cpp` берут секреты `THIRD_PARTY_*` из окружения, в форке их не запускаем.
 - 2026-10-30: `deploy.yml` из upstream в форке отключён: его jobs `android-runner` и `Bake-Prebuilts` с секретами в форке не работают. Вместо него `fork-windows.yml`.
 - 2026-10-30: `.gitignore` upstream игнорирует `*build-*`, поэтому скрипты с именами вида `build-xxx` не попадут в git. Скрипт сборки назван `local-build.bat`.
+- 2026-10-31: код из Mozilla (`client/mozilla/`, `client/daemon/`, `client/platforms/windows/`) написан в стиле с отступом 2 пробела. `.clang-format` репозитория к нему не применять: он переформатирует весь блок. Правки в этих файлах пишем в их стиле вручную.
+- 2026-10-31: `errorStrings.cpp` держит каждый `case` в одну строку, `.clang-format` их разбивает. Не форматировать этот файл.
 - 2026-10-31: тесты экспорта (`UiIpModelAndControllerTest`, `UiAllowedDnsModelAndControllerTest`) через `SystemController::saveFile` открывают папку файла в Проводнике (`systemController.cpp`, `QDesktopServices::openUrl`). Временная папка к этому моменту удалена, и у пользователя всплывает окно «Расположение недоступно». Поэтому `local-test.bat` запускает тесты с `QT_QPA_PLATFORM=offscreen`. Тесты не запускать напрямую без этой переменной.
