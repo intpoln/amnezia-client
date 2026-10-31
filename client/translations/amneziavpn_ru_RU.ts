@@ -118,6 +118,16 @@
     </message>
     <message>
         <location filename="../ui/controllers/appSplitTunnelingUiController.cpp"/>
+        <source>Applications added: %1</source>
+        <translation>Добавлено приложений: %1</translation>
+    </message>
+    <message>
+        <location filename="../ui/controllers/appSplitTunnelingUiController.cpp"/>
+        <source>Applications added: %1, already in the list: %2</source>
+        <translation>Добавлено приложений: %1, уже были в списке: %2</translation>
+    </message>
+    <message>
+        <location filename="../ui/controllers/appSplitTunnelingUiController.cpp"/>
         <source>The folder has already been added</source>
         <translation>Папка уже была добавлена</translation>
     </message>
@@ -4138,6 +4148,11 @@ Create one from the current settings.</source>
         <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml"/>
         <source>All .exe files in the folder and its subfolders will bypass the VPN</source>
         <translation>Все .exe-файлы в папке и её подпапках будут работать в обход VPN</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml"/>
+        <source>Programs that were already running when the VPN connected need a restart. For games, add the launcher too (Steam, Epic Games and others): games started from it will also bypass the VPN</source>
+        <translation>Программы, запущенные до подключения VPN, нужно перезапустить. Для игр добавьте и лаунчер (Steam, Epic Games и другие): запущенные из него игры тоже будут работать в обход VPN</translation>
     </message>
     <message>
         <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml"/>

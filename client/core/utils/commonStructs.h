@@ -28,7 +28,7 @@ namespace amnezia
             if (!packageName.isEmpty()) {
                 return packageName == other.packageName;
             } else {
-                return appPath == other.appPath;
+                return appPath.compare(other.appPath, Qt::CaseInsensitive) == 0;
             }
         }
     };

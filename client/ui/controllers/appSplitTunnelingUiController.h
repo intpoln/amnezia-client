@@ -25,6 +25,7 @@ public:
 
 public slots:
     void addApp(const QString &appPath);
+    void addAppFiles(const QList<QUrl> &fileUrls);
     void addApps(QVector<QPair<QString, QString>> apps);
     void addFolder(const QUrl &folderUrl);
     void removeApp(const int index);

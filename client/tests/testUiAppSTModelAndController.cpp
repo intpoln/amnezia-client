@@ -210,6 +210,23 @@ private slots:
         QVERIFY(repository->restoreAppConfig(backupWithFolders));
         QCOMPARE(repository->vpnAppFolders(AppsRouteMode::VpnAllExceptApps), QStringList({ dir.path() }));
     }
+
+    void testAddAppFiles()
+    {
+        auto uiController = m_coreController->m_appSplitTunnelingUiController;
+        auto repository = m_coreController->m_appSettingsRepository;
+        QSignalSpy finishedSpy(uiController, &AppSplitTunnelingUiController::finished);
+
+        uiController->addAppFiles({ QUrl::fromLocalFile("C:/Games/a.exe"), QUrl::fromLocalFile("C:/Games/b.exe") });
+        QCOMPARE(repository->vpnApps(AppsRouteMode::VpnAllExceptApps).size(), 2);
+
+        uiController->addAppFiles({ QUrl::fromLocalFile("c:/games/A.EXE"), QUrl::fromLocalFile("C:/Games/c.exe") });
+        QCOMPARE(repository->vpnApps(AppsRouteMode::VpnAllExceptApps).size(), 3);
+        QCOMPARE(finishedSpy.count(), 2);
+        QVERIFY2(finishedSpy.last().first().toString().endsWith(": 1"), qPrintable(finishedSpy.last().first().toString()));
+
+        m_coreController->m_appSplitTunnelingController->clearAppsList();
+    }
 };
 
 QTEST_MAIN(TestUiAppSTModelAndController)

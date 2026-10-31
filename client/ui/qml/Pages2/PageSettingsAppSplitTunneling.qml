@@ -182,6 +182,18 @@ PageType {
 
                 onClicked: folderDialog.open()
             }
+
+            BodyTextType {
+                Layout.fillWidth: true
+                Layout.leftMargin: 16
+                Layout.rightMargin: 16
+                Layout.bottomMargin: 16
+
+                visible: Qt.platform.os === "windows"
+
+                text: qsTr("Programs that were already running when the VPN connected need a restart. For games, add the launcher too (Steam, Epic Games and others): games started from it will also bypass the VPN")
+                color: AmneziaStyle.color.textSecondary
+            }
         }
 
         delegate: Item {
@@ -251,11 +263,7 @@ PageType {
                 PageController.showBusyIndicator(true)
 
                 if (Qt.platform.os === "windows") {
-                    var fileName = SystemController.getFileName(qsTr("Open executable file"),
-                                                                qsTr("Executable files (*.exe)"))
-                    if (fileName !== "") {
-                        AppSplitTunnelingController.addApp(fileName)
-                    }
+                    appFileDialog.open()
                 } else if (Qt.platform.os === "android"){
                     installedAppDrawer.open()
                 }
@@ -267,6 +275,16 @@ PageType {
 
     InstalledAppsDrawer {
         id: installedAppDrawer
+    }
+
+    FileDialog {
+        id: appFileDialog
+
+        fileMode: FileDialog.OpenFiles
+        acceptLabel: qsTr("Open executable file")
+        nameFilters: [ qsTr("Executable files (*.exe)") ]
+
+        onAccepted: AppSplitTunnelingController.addAppFiles(selectedFiles)
     }
 
     FolderDialog {

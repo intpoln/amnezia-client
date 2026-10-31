@@ -40,6 +40,29 @@ void AppSplitTunnelingUiController::addApp(const QString &appPath)
     }
 }
 
+void AppSplitTunnelingUiController::addAppFiles(const QList<QUrl> &fileUrls)
+{
+    if (fileUrls.size() == 1) {
+        addApp(fileUrls.first().toLocalFile());
+        return;
+    }
+
+    int addedCount = 0;
+    for (const auto &fileUrl : fileUrls) {
+        const QString appPath = fileUrl.toLocalFile();
+        if (m_appSplitTunnelingController->addApp({ QFileInfo(appPath).fileName(), "", appPath })) {
+            ++addedCount;
+        }
+    }
+
+    if (addedCount == fileUrls.size()) {
+        emit finished(tr("Applications added: %1").arg(addedCount));
+    } else {
+        emit finished(
+                tr("Applications added: %1, already in the list: %2").arg(addedCount).arg(fileUrls.size() - addedCount));
+    }
+}
+
 void AppSplitTunnelingUiController::addApps(QVector<QPair<QString, QString>> apps)
 {
     for (const auto &app : apps) {
