@@ -330,6 +330,7 @@ void VpnConnection::connectToVpn(const QString &serverId, DockerContainer contai
         return;
     }
 
+    m_stageTimer.start();
     qDebug() << QString("Trying to connect to VPN, server id is %1, container is %2, route mode is")
                         .arg(serverId)
                         .arg(ContainerUtils::containerToString(container))
@@ -350,6 +351,7 @@ void VpnConnection::connectToVpn(const QString &serverId, DockerContainer contai
 #endif
 
     appendSplitTunnelingConfig();
+    logStage("split tunneling config built");
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS) && !defined(MACOS_NE)
     m_vpnProtocol.reset(VpnProtocol::factory(container, m_vpnConfiguration));
@@ -358,6 +360,7 @@ void VpnConnection::connectToVpn(const QString &serverId, DockerContainer contai
         return;
     }
     m_vpnProtocol->prepare();
+    logStage("protocol prepared");
 #elif defined Q_OS_ANDROID
     androidVpnProtocol = createDefaultAndroidVpnProtocol();
     createAndroidConnections();
@@ -376,6 +379,7 @@ void VpnConnection::connectToVpn(const QString &serverId, DockerContainer contai
         setConnectionState(Vpn::ConnectionState::Error);
         emit vpnProtocolError(err);
     }
+    logStage("protocol started");
 }
 
 void VpnConnection::createProtocolConnections()
@@ -585,15 +589,19 @@ void VpnConnection::reconnectToVpn() {
 
     qDebug() << "Reconnect triggered. Reconnecting to the server";
 
+    m_stageTimer.start();
     setConnectionState(Vpn::ConnectionState::Reconnecting);
 
     m_vpnProtocol->stop();
+    logStage("protocol stopped");
     appendAppSplitTunnelingConfig();
     m_vpnProtocol->setAppSplitTunnelingConfig(m_vpnConfiguration);
+    logStage("split tunneling config built");
     if (ErrorCode err = m_vpnProtocol->start(); err != ErrorCode::NoError) {
         setConnectionState(Vpn::ConnectionState::Error);
         emit vpnProtocolError(err);
     }
+    logStage("protocol started");
 }
 
 void VpnConnection::disconnectFromVpn()
@@ -609,6 +617,7 @@ void VpnConnection::disconnectFromVpn()
         return;
     }
 
+    m_stageTimer.start();
     setConnectionState(Vpn::ConnectionState::Disconnecting);
 
 #ifdef Q_OS_ANDROID
@@ -624,6 +633,7 @@ void VpnConnection::disconnectFromVpn()
 #endif
 
     m_vpnProtocol->stop();
+    logStage("protocol stopped");
 
 #if !defined(Q_OS_ANDROID) && !defined(AMNEZIA_DESKTOP)
     m_vpnProtocol->deleteLater();
@@ -632,8 +642,20 @@ void VpnConnection::disconnectFromVpn()
     m_vpnProtocol = nullptr;
 }
 
+void VpnConnection::logStage(const QString &stage) const
+{
+    if (m_stageTimer.isValid()) {
+        qDebug().noquote() << QString("Connection timing: %1 at %2 ms").arg(stage).arg(m_stageTimer.elapsed());
+    }
+}
+
 void VpnConnection::setConnectionState(Vpn::ConnectionState state) {
+    QElapsedTimer serviceCallsTimer;
+    serviceCallsTimer.start();
     onConnectionStateChanged(state);
+    logStage(QString("state %1, service calls took %2 ms")
+                     .arg(QMetaEnum::fromType<Vpn::ConnectionState>().valueToKey(state))
+                     .arg(serviceCallsTimer.elapsed()));
 
     if (state == Vpn::Disconnected && m_connectionState == Vpn::Reconnecting)
         return;

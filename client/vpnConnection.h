@@ -1,6 +1,7 @@
 #ifndef VPNCONNECTION_H
 #define VPNCONNECTION_H
 
+#include <QElapsedTimer>
 #include <QObject>
 #include <QMetaObject>
 #include <QString>
@@ -91,7 +92,9 @@ private:
 #endif
 
    Vpn::ConnectionState m_connectionState;
+   QElapsedTimer m_stageTimer;
 
+   void logStage(const QString &stage) const;
    void createProtocolConnections();
 
    void appendSplitTunnelingConfig();

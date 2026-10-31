@@ -4,6 +4,7 @@
 
 #include "daemonlocalserverconnection.h"
 
+#include <QElapsedTimer>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
@@ -111,10 +112,16 @@ void DaemonLocalServerConnection::parseCommand(const QByteArray& data) {
       return;
     }
 
+    QElapsedTimer activationTimer;
+    activationTimer.start();
     if (!Daemon::instance()->activate(config)) {
-      logger.error() << "Failed to activate the interface";
+      logger.error() << "Failed to activate the interface after"
+                     << activationTimer.elapsed() << "ms";
       emit disconnected();
+      return;
     }
+    logger.debug() << "Interface activated in" << activationTimer.elapsed()
+                   << "ms";
     return;
   }
 
