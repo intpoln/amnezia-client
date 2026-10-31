@@ -17,6 +17,9 @@ class AppSplitTunnelingUiController : public QObject
 
     Q_PROPERTY(int routeMode READ getRouteMode WRITE setRouteMode NOTIFY routeModeChanged)
     Q_PROPERTY(bool isSplitTunnelingEnabled READ isSplitTunnelingEnabled NOTIFY isSplitTunnelingEnabledChanged)
+    Q_PROPERTY(int appsCount READ appsCount NOTIFY exclusionsChanged)
+    Q_PROPERTY(int foldersCount READ foldersCount NOTIFY exclusionsChanged)
+    Q_PROPERTY(int maxFolderExecutables READ maxFolderExecutables CONSTANT)
 
 public:
     explicit AppSplitTunnelingUiController(AppSplitTunnelingController* appSplitTunnelingController,
@@ -26,24 +29,34 @@ public:
 public slots:
     void addApp(const QString &appPath);
     void addAppFiles(const QList<QUrl> &fileUrls);
+    void addAppPaths(const QStringList &appPaths);
     void addApps(QVector<QPair<QString, QString>> apps);
     void addFolder(const QUrl &folderUrl);
+    void addAppFolders(const QStringList &appPaths);
+    void scanFolders();
     void removeApp(const int index);
     void toggleSplitTunneling(bool enabled);
     void setRouteMode(int routeMode);
 
     int getRouteMode() const;
     bool isSplitTunnelingEnabled() const;
+    int appsCount() const;
+    int foldersCount() const;
+    int maxFolderExecutables() const;
 
     void updateModel();
 
 signals:
     void routeModeChanged();
     void isSplitTunnelingEnabledChanged();
+    void exclusionsChanged();
     void errorOccurred(const QString &errorMessage);
     void finished(const QString &message);
 
 private:
+    void addFolderPath(const QString &folderPath);
+    void scanFolder(const QString &folderPath, bool reportResult);
+
     AppSplitTunnelingController* m_appSplitTunnelingController;
     AppSplitTunnelingModel* m_appSplitTunnelingModel;
 };

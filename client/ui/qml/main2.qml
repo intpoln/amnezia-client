@@ -86,6 +86,11 @@ Window  {
             popupErrorMessage.show(errorMessage)
         }
 
+        function onShowErrorMessageWithAction(errorMessage, actionText, actionId) {
+            popupErrorMessage.actionId = actionId
+            popupErrorMessage.show(errorMessage, actionText)
+        }
+
         function onShowNotificationMessage(message) {
             popupNotificationMessage.show(message)
         }
@@ -132,10 +137,20 @@ Window  {
     SnackbarType {
         id: popupErrorMessage
 
+        property string actionId
+
         bottomOffset: Math.max(PageController.safeAreaBottomMargin, pageStart.tabBarHeight - 4)
 
         closable: true
         duration: 0
+
+        onActionTriggered: {
+            if (actionId === "retry") {
+                ConnectionController.connectButtonClicked()
+            } else if (actionId === "openLogs") {
+                PageController.goToPage(PageEnum.PageSettingsLogging)
+            }
+        }
     }
 
     CaptchaDialogType {

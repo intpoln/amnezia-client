@@ -27,6 +27,12 @@
   - OpenVPN/Xray: QtRO `enablePeerTraffic` → `service/server/killswitch.cpp` около строк 229–297.
 - **Применение:** `client/platforms/windows/daemon/windowsdaemon.cpp` (`activateSplitTunnel`, около строки 64) → `client/platforms/windows/daemon/windowssplittunnel.cpp`. Там `excludeApps()` (около строки 293), перевод путей в `\Device\HarddiskVolumeN\...` в `convertPath()`, IOCTL драйвера.
 - **Папки (форк):** сканер `client/core/utils/folderExecutables.cpp` (`find`, `expand`). Хранение в `Conf/ExceptAppsFolders` (`vpnAppFolders`/`setVpnAppFolders` в `secureAppSettingsRepository.cpp`). В модели папки идут строками после приложений (роли `isFolder`, `fullPath`), поэтому `removeApp(index)` в UI-контроллере удаляет папку при `index >= числа приложений`. Разворот в exe в `appendAppSplitTunnelingConfig()` (вызывается из `appendSplitTunnelingConfig()`), в лог пишется число папок и exe. При автопереподключении (`reconnectToVpn`, сон и смена сети) список пересобирается и передаётся протоколу через `VpnProtocol::setAppSplitTunnelingConfig`, остальной конфиг протокола (с уже разрешённым адресом сервера) не трогается. Сетевые папки (`\\server\share`) не принимаются: служба (`convertPath` в `windowssplittunnel.cpp`) отбрасывает пути без буквы диска. При восстановлении копии без ключа папок папки очищаются (`restoreAppConfig` в репозитории).
+- **Удобство (этап 2b):**
+  - страница на Windows разрешает правки при подключённом VPN; `hasChangesToApply` ставится по `exclusionsChanged` во время подключения, кнопка «Переподключить» вызывает `ConnectionController.reconnect()`. Android-ветка страницы прежняя (блокировка при подключении, режимы);
+  - число `.exe` папки: `AppSplitTunnelingModel::setFolderExecutablesCount` (роль `executablesCount`, `-1` идёт поиск, `-2` неизвестно). Заполняется при добавлении папки и `scanFolders()` при открытии страницы, только для папок с неизвестным числом;
+  - запущенные программы: `core/utils/runningApps.cpp` (Toolhelp32 + `QueryFullProcessImageNameW`, без `%SystemRoot%` и папки самого клиента), модель `RunningAppsModel`, шторка `Components/RunningAppsDrawer.qml`;
+  - `GC.escapeRegExp` экранирует текст поиска для `RegExpFilter` (пути с `\` и скобками);
+  - ошибки с действием: `PageController::showErrorMessageWithAction(message, actionText, actionId)`, действия `retry` и `openLogs` обрабатывает `popupErrorMessage` в `main2.qml`.
 - **Тесты:** `client/tests/testUiAppSTModelAndController.cpp`.
 
 ## Драйвер Mullvad: что важно знать

@@ -106,8 +106,9 @@ PageType {
 
                     visible: root.isAppSplitTinnelingEnabled
 
-                    text: qsTr("App-based split tunneling")
-                    subtitle: qsTr("Allows you to use the VPN only for certain Apps")
+                    text: Qt.platform.os === "windows" ? qsTr("App and folder exclusions") : qsTr("App-based split tunneling")
+                    subtitle: Qt.platform.os === "windows" ? qsTr("Chosen apps and folders bypass the VPN")
+                                                           : qsTr("Allows you to use the VPN only for certain Apps")
                     trailingIconSource: "qrc:/images/controls/chevron-right.svg"
 
                     onClicked: {

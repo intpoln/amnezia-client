@@ -70,6 +70,7 @@ signals:
 
     void showErrorMessage(amnezia::ErrorCode);
     void showErrorMessage(const QString &errorMessage);
+    void showErrorMessageWithAction(const QString &errorMessage, const QString &actionText, const QString &actionId);
     void showNotificationMessage(const QString &message);
 
     void showBusyIndicator(bool visible);

@@ -38,4 +38,8 @@ Item {
         clipboard.copy()
         clipboard.select(0, 0)
     }
+
+    function escapeRegExp(text) {
+        return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    }
 }

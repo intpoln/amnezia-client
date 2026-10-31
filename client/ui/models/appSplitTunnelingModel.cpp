@@ -36,6 +36,9 @@ QVariant AppSplitTunnelingModel::data(const QModelIndex &index, int role) const
         case IsFolderRole: {
             return isFolder;
         }
+        case ExecutablesCountRole: {
+            return isFolder ? folderExecutablesCount(folder) : executablesCountUnknown;
+        }
         default: {
             return true;
         }
@@ -52,11 +55,28 @@ void AppSplitTunnelingModel::updateModel(const QVector<amnezia::InstalledAppInfo
     endResetModel();
 }
 
+void AppSplitTunnelingModel::setFolderExecutablesCount(const QString &folder, int count)
+{
+    m_folderExecutablesCounts.insert(folder, count);
+
+    const int folderIndex = m_folders.indexOf(folder);
+    if (folderIndex >= 0) {
+        const QModelIndex modelIndex = index(m_apps.size() + folderIndex);
+        emit dataChanged(modelIndex, modelIndex, { ExecutablesCountRole });
+    }
+}
+
+int AppSplitTunnelingModel::folderExecutablesCount(const QString &folder) const
+{
+    return m_folderExecutablesCounts.value(folder, executablesCountUnknown);
+}
+
 QHash<int, QByteArray> AppSplitTunnelingModel::roleNames() const
 {
     QHash<int, QByteArray> roles;
     roles[AppPathRole] = "appPath";
     roles[FullPathRole] = "fullPath";
     roles[IsFolderRole] = "isFolder";
+    roles[ExecutablesCountRole] = "executablesCount";
     return roles;
 }

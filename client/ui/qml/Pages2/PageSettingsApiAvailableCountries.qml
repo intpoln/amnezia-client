@@ -45,12 +45,13 @@ PageType {
 
     function selectConnectionCountry(countryCode, countryName) {
         if (countryCode === ApiCountryModel.currentCountryCode) {
-            return
+            return false
         }
 
         PageController.showBusyIndicator(true)
-        SubscriptionUiController.updateServiceFromGateway(ServersUiController.processedServerId, countryCode, countryName)
+        const isUpdated = SubscriptionUiController.updateServiceFromGateway(ServersUiController.processedServerId, countryCode, countryName)
         PageController.showBusyIndicator(false)
+        return isUpdated
     }
 
     readonly property bool showSubscriptionNote: root.subscriptionExpired || root.subscriptionExpiringSoon
@@ -65,8 +66,16 @@ PageType {
             PageController.showNotificationMessage(qsTr("Unable change server location while trying to make an active connection"))
             return
         }
-        if (ConnectionController.isConnected) {
-            PageController.showNotificationMessage(qsTr("Unable change server location while there is an active connection"))
+        if (ConnectionController.isConnected && countryCode !== ApiCountryModel.currentCountryCode
+                && ServersUiController.processedServerId === ServersUiController.defaultServerId) {
+            Dialogs.askQuestion(qsTr("Switch to %1?").arg(countryName),
+                                qsTr("The VPN will briefly disconnect and connect to the new location"),
+                                qsTr("Switch"), qsTr("Cancel"),
+                                function() {
+                                    if (root.selectConnectionCountry(countryCode, countryName)) {
+                                        ConnectionController.reconnect()
+                                    }
+                                }, function() {})
             return
         }
         root.selectConnectionCountry(countryCode, countryName)

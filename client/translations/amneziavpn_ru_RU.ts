@@ -607,6 +607,11 @@ Can&apos;t be disabled for current server</source>
         <source>App-based split tunneling</source>
         <translation>Раздельное туннелирование приложений</translation>
     </message>
+    <message>
+        <location filename="../ui/qml/Components/HomeSplitTunnelingDrawer.qml" line="1"/>
+        <source>App and folder exclusions</source>
+        <translation>Исключения приложений и папок</translation>
+    </message>
 </context>
 <context>
     <name>ImportUiController</name>
@@ -937,6 +942,16 @@ Already installed containers were found on the server. All installed containers 
         <location filename="../ui/qml/Pages2/PageHome.qml" line="343"/>
         <source>Servers</source>
         <translation>Серверы</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1"/>
+        <source>Exclusions: apps %1, folders %2</source>
+        <translation>Исключения: приложений %1, папок %2</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1"/>
+        <source>App and folder exclusions are off</source>
+        <translation>Исключения приложений и папок выключены</translation>
     </message>
 </context>
 <context>
@@ -3558,6 +3573,26 @@ Create one from the current settings.</source>
         <source>Show</source>
         <translation>Показать</translation>
     </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsApiAvailableCountries.qml" line="1"/>
+        <source>Switch to %1?</source>
+        <translation>Переключиться на %1?</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsApiAvailableCountries.qml" line="1"/>
+        <source>Switch</source>
+        <translation>Переключить</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsApiAvailableCountries.qml" line="1"/>
+        <source>Cancel</source>
+        <translation>Отменить</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsApiAvailableCountries.qml" line="1"/>
+        <source>The VPN will briefly disconnect and connect to the new location</source>
+        <translation>VPN ненадолго отключится и подключится к новой локации</translation>
+    </message>
 </context>
 <context>
     <name>PageSettingsApiDevices</name>
@@ -4159,6 +4194,96 @@ Create one from the current settings.</source>
         <source>Folder: %1</source>
         <translation>Папка: %1</translation>
     </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="1"/>
+        <source>Searching for .exe files… · %1</source>
+        <translation>Поиск .exe файлов… · %1</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="1"/>
+        <source>Too many .exe files, only the first %1 bypass the VPN · %2</source>
+        <translation>Слишком много .exe файлов, в обход VPN пойдут только первые %1 · %2</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="1"/>
+        <source>.exe files: %1 · %2</source>
+        <translation>Файлов .exe: %1 · %2</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="1"/>
+        <source>App and folder exclusions</source>
+        <translation>Исключения приложений и папок</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="1"/>
+        <source>Apps and folders from the list bypass the VPN, everything else goes through it</source>
+        <translation>Приложения и папки из списка работают в обход VPN, всё остальное идёт через VPN</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="1"/>
+        <source>The VPN is connected. Changes will apply after reconnecting the VPN</source>
+        <translation>VPN подключён. Изменения применятся после переподключения VPN</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="1"/>
+        <source>Reconnect</source>
+        <translation>Переподключить</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="1"/>
+        <source>Add app</source>
+        <translation>Добавить приложение</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="1"/>
+        <source>Choose .exe files</source>
+        <translation>Выбрать .exe файлы</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="1"/>
+        <source>Add running program</source>
+        <translation>Добавить запущенную программу</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="1"/>
+        <source>Choose from the programs running now, for example a game</source>
+        <translation>Выбрать из запущенных сейчас программ, например игру</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="1"/>
+        <source>Folders are checked on every connection, so new .exe files in them bypass the VPN too. Programs that were already running when the VPN connected need a restart. For games, add the launcher too (Steam, Epic Games and others): games started from it will also bypass the VPN</source>
+        <translation>Папки проверяются при каждом подключении, поэтому новые .exe файлы в них тоже работают в обход VPN. Программы, запущенные до подключения VPN, нужно перезапустить. Для игр добавьте и лаунчер (Steam, Epic Games и другие): игры, запущенные из него, тоже пойдут в обход VPN</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="1"/>
+        <source>Remove %1 from exclusions?</source>
+        <translation>Удалить %1 из исключений?</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="1"/>
+        <source>Remove exclusion</source>
+        <translation>Удалить исключение</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="1"/>
+        <source>Nothing found</source>
+        <translation>Ничего не найдено</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="1"/>
+        <source>No exclusions yet</source>
+        <translation>Исключений пока нет</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="1"/>
+        <source>Add an app, a running program or a folder above</source>
+        <translation>Добавьте приложение, запущенную программу или папку выше</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="1"/>
+        <source>Search exclusions</source>
+        <translation>Поиск по исключениям</translation>
+    </message>
 </context>
 <context>
     <name>PageSettingsApplication</name>
@@ -4418,6 +4543,16 @@ Create one from the current settings.</source>
         <location filename="../ui/qml/Pages2/PageSettingsConnection.qml" line="127"/>
         <source>Blocks network connections without VPN</source>
         <translation>Блокирует интернет-соединение без VPN</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsConnection.qml" line="1"/>
+        <source>App and folder exclusions</source>
+        <translation>Исключения приложений и папок</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsConnection.qml" line="1"/>
+        <source>Chosen apps and folders bypass the VPN</source>
+        <translation>Выбранные приложения и папки работают в обход VPN</translation>
     </message>
 </context>
 <context>
@@ -7245,6 +7380,26 @@ FileZilla или другие SFTP-клиенты, а также смонтир�
         <source>Unable change server while there is an active connection</source>
         <translation>Невозможно изменить сервер во время активного соединения</translation>
     </message>
+    <message>
+        <location filename="../ui/qml/Components/ServersListView.qml" line="1"/>
+        <source>Switch to %1?</source>
+        <translation>Переключиться на %1?</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Components/ServersListView.qml" line="1"/>
+        <source>Switch</source>
+        <translation>Переключить</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Components/ServersListView.qml" line="1"/>
+        <source>Cancel</source>
+        <translation>Отменить</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Components/ServersListView.qml" line="1"/>
+        <source>The VPN will briefly disconnect and connect to the new server</source>
+        <translation>VPN ненадолго отключится и подключится к новому серверу</translation>
+    </message>
 </context>
 <context>
     <name>ServersUiController</name>
@@ -7688,6 +7843,47 @@ What can help:
         <location filename="../ui/qml/main2.qml" line="314"/>
         <source>Close</source>
         <translation>Закрыть</translation>
+    </message>
+</context>
+<context>
+    <name>RunningAppsDrawer</name>
+    <message>
+        <location filename="../ui/qml/Components/RunningAppsDrawer.qml" line="1"/>
+        <source>Running programs</source>
+        <translation>Запущенные программы</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Components/RunningAppsDrawer.qml" line="1"/>
+        <source>Nothing found</source>
+        <translation>Ничего не найдено</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Components/RunningAppsDrawer.qml" line="1"/>
+        <source>program name or path</source>
+        <translation>имя или путь программы</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Components/RunningAppsDrawer.qml" line="1"/>
+        <source>Add selected</source>
+        <translation>Добавить выбранные</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Components/RunningAppsDrawer.qml" line="1"/>
+        <source>Add their folders</source>
+        <translation>Добавить их папки</translation>
+    </message>
+</context>
+<context>
+    <name>PageController</name>
+    <message>
+        <location filename="../ui/controllers/qml/pageController.cpp" line="1"/>
+        <source>Retry</source>
+        <translation>Повторить</translation>
+    </message>
+    <message>
+        <location filename="../ui/controllers/qml/pageController.cpp" line="1"/>
+        <source>Open logs</source>
+        <translation>Открыть логи</translation>
     </message>
 </context>
 </TS>

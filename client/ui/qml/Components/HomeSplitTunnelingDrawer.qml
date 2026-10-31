@@ -76,7 +76,7 @@ SheetType {
             Layout.leftMargin: 16
             Layout.rightMargin: 16
 
-            text: qsTr("App-based split tunneling")
+            text: Qt.platform.os === "windows" ? qsTr("App and folder exclusions") : qsTr("App-based split tunneling")
             subtitle: AppSplitTunnelingController.isSplitTunnelingEnabled ? qsTr("Enabled") : qsTr("Disabled")
             trailingIconSource: "qrc:/images/controls/chevron-right.svg"
 

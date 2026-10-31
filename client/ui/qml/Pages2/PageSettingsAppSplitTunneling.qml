@@ -20,10 +20,15 @@ import "../Components"
 PageType {
     id: root
 
+    readonly property bool isWindows: Qt.platform.os === "windows"
     property bool pageEnabled
+    property bool hasChangesToApply: false
 
     Component.onCompleted: {
-        if (ConnectionController.isConnected) {
+        if (root.isWindows) {
+            root.pageEnabled = true
+            AppSplitTunnelingController.scanFolders()
+        } else if (ConnectionController.isConnected) {
             PageController.showNotificationMessage(qsTr("Cannot change split tunneling settings during active connection"))
             root.pageEnabled = false
         } else {
@@ -41,6 +46,22 @@ PageType {
         function onErrorOccurred(errorMessage) {
             PageController.showErrorMessage(errorMessage)
         }
+
+        function onExclusionsChanged() {
+            if (ConnectionController.isConnected || ConnectionController.isConnectionInProgress) {
+                root.hasChangesToApply = true
+            }
+        }
+    }
+
+    Connections {
+        target: ConnectionController
+
+        function onConnectionStateChanged() {
+            if (!ConnectionController.isConnected && !ConnectionController.isConnectionInProgress) {
+                root.hasChangesToApply = false
+            }
+        }
     }
 
     readonly property var routeModes: [
@@ -49,6 +70,20 @@ PageType {
     ]
 
     readonly property int routeModeIndex: AppSplitTunnelingController.routeMode === 2 ? 1 : 0
+
+    function folderSubtitle(path, executablesCount) {
+        if (executablesCount === -1) {
+            return qsTr("Searching for .exe files… · %1").arg(path)
+        }
+        if (executablesCount >= AppSplitTunnelingController.maxFolderExecutables) {
+            return qsTr("Too many .exe files, only the first %1 bypass the VPN · %2")
+                .arg(AppSplitTunnelingController.maxFolderExecutables).arg(path)
+        }
+        if (executablesCount >= 0) {
+            return qsTr(".exe files: %1 · %2").arg(executablesCount).arg(path)
+        }
+        return qsTr("Folder: %1").arg(path)
+    }
 
     ListViewType {
         id: listView
@@ -61,10 +96,17 @@ PageType {
         model: SortFilterProxyModel {
             id: proxyAppSplitTunnelingModel
             sourceModel: AppSplitTunnelingModel
-            filters: RegExpFilter {
-                roleName: "appPath"
-                pattern: ".*" + searchField.textField.text + ".*"
-                caseSensitivity: Qt.CaseInsensitive
+            filters: AnyOf {
+                RegExpFilter {
+                    roleName: "appPath"
+                    pattern: ".*" + GC.escapeRegExp(searchField.textField.text) + ".*"
+                    caseSensitivity: Qt.CaseInsensitive
+                }
+                RegExpFilter {
+                    roleName: "fullPath"
+                    pattern: ".*" + GC.escapeRegExp(searchField.textField.text) + ".*"
+                    caseSensitivity: Qt.CaseInsensitive
+                }
             }
             sorters: [
                 RoleSorter { roleName: "appPath"; sortOrder: Qt.AscendingOrder }
@@ -89,7 +131,7 @@ PageType {
 
                 Layout.fillWidth: true
 
-                title: qsTr("App split tunneling")
+                title: root.isWindows ? qsTr("App and folder exclusions") : qsTr("App split tunneling")
             }
 
             ListItemType {
@@ -99,7 +141,7 @@ PageType {
 
                 enabled: root.pageEnabled
 
-                text: qsTr("App split tunneling")
+                text: root.isWindows ? qsTr("App and folder exclusions") : qsTr("App split tunneling")
 
                 onClicked: {
                     splitTunnelingSwitch.toggle()
@@ -125,6 +167,7 @@ PageType {
                 Layout.leftMargin: 16
                 Layout.rightMargin: 16
 
+                visible: !root.isWindows
                 enabled: (Qt.platform.os === "android") && root.pageEnabled
 
                 model: root.routeModes.map(function(mode) { return mode.segmentName })
@@ -152,7 +195,8 @@ PageType {
                 Layout.rightMargin: 16
                 Layout.bottomMargin: 24
 
-                text: root.routeModes[modeSelector.currentIndex].name
+                text: root.isWindows ? qsTr("Apps and folders from the list bypass the VPN, everything else goes through it")
+                                     : root.routeModes[modeSelector.currentIndex].name
                 color: AmneziaStyle.color.textSecondary
             }
 
@@ -160,11 +204,53 @@ PageType {
                 Layout.fillWidth: true
                 Layout.leftMargin: 16
                 Layout.rightMargin: 16
-                Layout.bottomMargin: 24
+                Layout.bottomMargin: 8
 
-                text: qsTr("Only \"Apps from the list should not have access via VPN\" mode is available on Windows")
+                visible: root.isWindows && ConnectionController.isConnected
 
-                visible: (Qt.platform.os === "windows") && root.pageEnabled
+                variant: NotificationType.Warning
+                text: qsTr("The VPN is connected. Changes will apply after reconnecting the VPN")
+            }
+
+            ButtonType {
+                Layout.fillWidth: true
+                Layout.leftMargin: 16
+                Layout.rightMargin: 16
+                Layout.bottomMargin: 16
+
+                visible: root.isWindows && ConnectionController.isConnected && root.hasChangesToApply
+
+                text: qsTr("Reconnect")
+
+                onClicked: ConnectionController.reconnect()
+            }
+
+            ListItemType {
+                Layout.fillWidth: true
+                Layout.leftMargin: 16
+                Layout.rightMargin: 16
+
+                visible: root.isWindows
+
+                text: qsTr("Add app")
+                subtitle: qsTr("Choose .exe files")
+                trailingIconSource: "qrc:/images/controls/plus.svg"
+
+                onClicked: appFileDialog.open()
+            }
+
+            ListItemType {
+                Layout.fillWidth: true
+                Layout.leftMargin: 16
+                Layout.rightMargin: 16
+
+                visible: root.isWindows
+
+                text: qsTr("Add running program")
+                subtitle: qsTr("Choose from the programs running now, for example a game")
+                trailingIconSource: "qrc:/images/controls/plus.svg"
+
+                onClicked: runningAppsDrawer.open()
             }
 
             ListItemType {
@@ -173,8 +259,7 @@ PageType {
                 Layout.rightMargin: 16
                 Layout.bottomMargin: 8
 
-                visible: Qt.platform.os === "windows"
-                enabled: root.pageEnabled
+                visible: root.isWindows
 
                 text: qsTr("Add folder")
                 subtitle: qsTr("All .exe files in the folder and its subfolders will bypass the VPN")
@@ -189,9 +274,9 @@ PageType {
                 Layout.rightMargin: 16
                 Layout.bottomMargin: 16
 
-                visible: Qt.platform.os === "windows"
+                visible: root.isWindows
 
-                text: qsTr("Programs that were already running when the VPN connected need a restart. For games, add the launcher too (Steam, Epic Games and others): games started from it will also bypass the VPN")
+                text: qsTr("Folders are checked on every connection, so new .exe files in them bypass the VPN too. Programs that were already running when the VPN connected need a restart. For games, add the launcher too (Steam, Epic Games and others): games started from it will also bypass the VPN")
                 color: AmneziaStyle.color.textSecondary
             }
         }
@@ -208,12 +293,12 @@ PageType {
                 anchors.rightMargin: 16
 
                 text: appPath
-                subtitle: isFolder ? qsTr("Folder: %1").arg(fullPath) : fullPath
+                subtitle: isFolder ? root.folderSubtitle(fullPath, executablesCount) : fullPath
                 trailingIconSource: "qrc:/images/controls/trash.svg"
 
                 onClicked: {
-                    var headerText = qsTr("Remove ") + appPath + "?"
-                    var yesButtonText = qsTr("Continue")
+                    var headerText = qsTr("Remove %1 from exclusions?").arg(appPath)
+                    var yesButtonText = qsTr("Remove exclusion")
                     var noButtonText = qsTr("Cancel")
 
                     var yesButtonFunction = function() {
@@ -225,6 +310,18 @@ PageType {
                     Dialogs.askQuestion(headerText, "", yesButtonText, noButtonText, yesButtonFunction, noButtonFunction)
                 }
             }
+        }
+
+        footer: EmptyStateType {
+            width: listView.width
+            height: visible ? implicitHeight : 0
+
+            visible: listView.count === 0
+
+            iconSource: searchField.textField.text !== "" ? "qrc:/images/controls/search.svg" : ""
+            title: searchField.textField.text !== "" ? qsTr("Nothing found") : qsTr("No exclusions yet")
+            description: searchField.textField.text === "" && root.isWindows
+                         ? qsTr("Add an app, a running program or a folder above") : ""
         }
     }
 
@@ -252,19 +349,17 @@ PageType {
 
             enabled: root.pageEnabled
 
-            textField.placeholderText: qsTr("application name")
-            buttonImageSource: "qrc:/images/controls/plus.svg"
+            textField.placeholderText: root.isWindows ? qsTr("Search exclusions") : qsTr("application name")
+            buttonImageSource: root.isWindows ? "" : "qrc:/images/controls/plus.svg"
             buttonJoined: true
 
-            rightButtonClickedOnEnter: true
+            rightButtonClickedOnEnter: !root.isWindows
 
             clickedFunc: function() {
                 searchField.focus = false
                 PageController.showBusyIndicator(true)
 
-                if (Qt.platform.os === "windows") {
-                    appFileDialog.open()
-                } else if (Qt.platform.os === "android"){
+                if (Qt.platform.os === "android") {
                     installedAppDrawer.open()
                 }
 
@@ -275,6 +370,10 @@ PageType {
 
     InstalledAppsDrawer {
         id: installedAppDrawer
+    }
+
+    RunningAppsDrawer {
+        id: runningAppsDrawer
     }
 
     FileDialog {

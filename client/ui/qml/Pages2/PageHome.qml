@@ -184,6 +184,24 @@ PageType {
                 }
             }
 
+            HomeInfoButton {
+                id: appExclusionsButton
+
+                Layout.alignment: Qt.AlignHCenter
+                Layout.maximumWidth: parent.width - 32
+
+                visible: Qt.platform.os === "windows"
+
+                text: AppSplitTunnelingController.isSplitTunnelingEnabled
+                      ? qsTr("Exclusions: apps %1, folders %2").arg(AppSplitTunnelingController.appsCount).arg(AppSplitTunnelingController.foldersCount)
+                      : qsTr("App and folder exclusions are off")
+
+                leftImageSource: "qrc:/images/controls/app.svg"
+                rightImageSource: "qrc:/images/controls/chevron-right.svg"
+
+                onClicked: PageController.goToPage(PageEnum.PageSettingsAppSplitTunneling)
+            }
+
             PromoBanner {
                 id: promoBanner
 

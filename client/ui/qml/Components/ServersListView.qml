@@ -5,6 +5,7 @@ import PageEnum 1.0
 import Style 1.0
 
 import "../Controls2"
+import "../Config"
 
 ListViewType {
     id: root
@@ -59,12 +60,22 @@ ListViewType {
         checked: serverId === ServersUiController.defaultServerId
 
         onClicked: {
-            if (ConnectionController.isConnected) {
-                PageController.showNotificationMessage(qsTr("Unable change server while there is an active connection"))
+            if (!ConnectionController.isConnected) {
+                ServersUiController.setDefaultServerAtIndex(index)
+                return
+            }
+            if (checked) {
                 return
             }
 
-            ServersUiController.setDefaultServerAtIndex(index)
+            const serverIndex = index
+            Dialogs.askQuestion(qsTr("Switch to %1?").arg(name),
+                                qsTr("The VPN will briefly disconnect and connect to the new server"),
+                                qsTr("Switch"), qsTr("Cancel"),
+                                function() {
+                                    ServersUiController.setDefaultServerAtIndex(serverIndex)
+                                    ConnectionController.reconnect()
+                                }, function() {})
         }
 
         onSettingsRequested: root.openServerSettings(serverId)

@@ -19,8 +19,12 @@ public:
         PackageAppNameRole,
         PackageAppIconRole,
         FullPathRole,
-        IsFolderRole
+        IsFolderRole,
+        ExecutablesCountRole
     };
+
+    static constexpr int executablesCountUnknown = -2;
+    static constexpr int executablesCountSearching = -1;
 
     explicit AppSplitTunnelingModel(QObject *parent = nullptr);
 
@@ -30,6 +34,8 @@ public:
 
 public slots:
     void updateModel(const QVector<amnezia::InstalledAppInfo> &apps, const QStringList &folders);
+    void setFolderExecutablesCount(const QString &folder, int count);
+    int folderExecutablesCount(const QString &folder) const;
 
 protected:
     QHash<int, QByteArray> roleNames() const override;
@@ -37,6 +43,7 @@ protected:
 private:
     QVector<amnezia::InstalledAppInfo> m_apps;
     QStringList m_folders;
+    QHash<QString, int> m_folderExecutablesCounts;
 };
 
 #endif // APPSPLITTUNNELINGMODEL_H
