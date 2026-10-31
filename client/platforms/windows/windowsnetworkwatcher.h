@@ -26,7 +26,10 @@ class WindowsNetworkWatcher final : public NetworkWatcherImpl {
   static LRESULT PowerWndProcCallback(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
   static void routeChangeCallback(PVOID context, PMIB_IPFORWARD_ROW2 row,
                                   MIB_NOTIFICATION_TYPE type);
-  static QString defaultRoutesSignature();
+  static void addressChangeCallback(PVOID context,
+                                    PMIB_UNICASTIPADDRESS_ROW row,
+                                    MIB_NOTIFICATION_TYPE type);
+  static QString physicalNetworkSignature();
 
   void createPowerMonitorWindow();
   void scheduleNetworkCheck(bool bssidChanged);
@@ -40,8 +43,9 @@ class WindowsNetworkWatcher final : public NetworkWatcherImpl {
   QString m_lastBSSID;
 
   HANDLE m_routeHandle = nullptr;
+  HANDLE m_addressHandle = nullptr;
   QTimer m_networkCheckTimer;
-  QString m_defaultRoutes;
+  QString m_physicalNetwork;
   bool m_bssidChanged = false;
 };
 

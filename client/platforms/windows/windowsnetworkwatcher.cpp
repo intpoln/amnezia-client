@@ -19,6 +19,12 @@
 namespace {
 Logger logger("WindowsNetworkWatcher");
 constexpr int networkCheckDelayMsec = 2000;
+
+QString ipv4ToString(const IN_ADDR& address) {
+  char text[INET_ADDRSTRLEN] = {};
+  InetNtopA(AF_INET, &address, text, sizeof(text));
+  return QString::fromLatin1(text);
+}
 }
 
 WindowsNetworkWatcher::WindowsNetworkWatcher(QObject* parent)
@@ -36,6 +42,10 @@ WindowsNetworkWatcher::~WindowsNetworkWatcher() {
 
   if (m_routeHandle) {
     CancelMibChangeNotify2(m_routeHandle);
+  }
+
+  if (m_addressHandle) {
+    CancelMibChangeNotify2(m_addressHandle);
   }
 
   if (m_wlanHandle) {
@@ -66,10 +76,14 @@ void WindowsNetworkWatcher::initialize() {
 
   createPowerMonitorWindow();
 
-  m_defaultRoutes = defaultRoutesSignature();
+  m_physicalNetwork = physicalNetworkSignature();
   if (NotifyRouteChange2(AF_INET, routeChangeCallback, this, FALSE,
                          &m_routeHandle) != NO_ERROR) {
     WindowsUtils::windowsLog("Failed to register a route change callback");
+  }
+  if (NotifyUnicastIpAddressChange(AF_INET, addressChangeCallback, this,
+                                   FALSE, &m_addressHandle) != NO_ERROR) {
+    WindowsUtils::windowsLog("Failed to register an address change callback");
   }
 
   DWORD negotiatedVersion;
@@ -125,12 +139,27 @@ void WindowsNetworkWatcher::routeChangeCallback(PVOID context,
 }
 
 // static
-QString WindowsNetworkWatcher::defaultRoutesSignature() {
+void WindowsNetworkWatcher::addressChangeCallback(PVOID context,
+                                                  PMIB_UNICASTIPADDRESS_ROW row,
+                                                  MIB_NOTIFICATION_TYPE type) {
+  Q_UNUSED(row);
+  Q_UNUSED(type);
+  static_cast<WindowsNetworkWatcher*>(context)->scheduleNetworkCheck(false);
+}
+
+// static
+QString WindowsNetworkWatcher::physicalNetworkSignature() {
   PMIB_IPFORWARD_TABLE2 table = nullptr;
   if (GetIpForwardTable2(AF_INET, &table) != NO_ERROR) {
     return QString();
   }
   auto guard = qScopeGuard([&] { FreeMibTable(table); });
+
+  PMIB_UNICASTIPADDRESS_TABLE addresses = nullptr;
+  if (GetUnicastIpAddressTable(AF_INET, &addresses) != NO_ERROR) {
+    return QString();
+  }
+  auto addressesGuard = qScopeGuard([&] { FreeMibTable(addresses); });
 
   QStringList routes;
   for (ULONG i = 0; i < table->NumEntries; ++i) {
@@ -147,10 +176,20 @@ QString WindowsNetworkWatcher::defaultRoutesSignature() {
       continue;
     }
 
-    char nextHop[INET_ADDRSTRLEN] = {};
-    InetNtopA(AF_INET, &route.NextHop.Ipv4.sin_addr, nextHop,
-              sizeof(nextHop));
-    routes.append(QString("%1 %2").arg(route.InterfaceLuid.Value).arg(nextHop));
+    QStringList adapterAddresses;
+    for (ULONG j = 0; j < addresses->NumEntries; ++j) {
+      const MIB_UNICASTIPADDRESS_ROW& address = addresses->Table[j];
+      if (address.InterfaceLuid.Value == route.InterfaceLuid.Value &&
+          address.DadState == IpDadStatePreferred) {
+        adapterAddresses.append(ipv4ToString(address.Address.Ipv4.sin_addr));
+      }
+    }
+    adapterAddresses.sort();
+
+    routes.append(QString("%1 %2 %3")
+                      .arg(route.InterfaceLuid.Value)
+                      .arg(ipv4ToString(route.NextHop.Ipv4.sin_addr),
+                           adapterAddresses.join(' ')));
   }
   routes.sort();
   return routes.join(',');
@@ -167,21 +206,21 @@ void WindowsNetworkWatcher::scheduleNetworkCheck(bool bssidChanged) {
 }
 
 void WindowsNetworkWatcher::checkNetwork() {
-  const QString defaultRoutes = defaultRoutesSignature();
-  const bool routesChanged =
-      !defaultRoutes.isEmpty() && defaultRoutes != m_defaultRoutes;
-  if (!defaultRoutes.isEmpty()) {
-    m_defaultRoutes = defaultRoutes;
+  const QString physicalNetwork = physicalNetworkSignature();
+  const bool physicalNetworkChanged =
+      !physicalNetwork.isEmpty() && physicalNetwork != m_physicalNetwork;
+  if (!physicalNetwork.isEmpty()) {
+    m_physicalNetwork = physicalNetwork;
   }
 
   const bool bssidChanged = m_bssidChanged;
   m_bssidChanged = false;
-  if (!isActive() || (!routesChanged && !bssidChanged)) {
+  if (!isActive() || (!physicalNetworkChanged && !bssidChanged)) {
     return;
   }
 
-  logger.debug() << "The network has changed, routes changed:" << routesChanged
-                 << "wifi changed:" << bssidChanged;
+  logger.debug() << "The network has changed, routes or addresses changed:"
+                 << physicalNetworkChanged << "wifi changed:" << bssidChanged;
   emit networkChanged(QString());
 }
 
