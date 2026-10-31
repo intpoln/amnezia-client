@@ -326,6 +326,7 @@ void VpnConnection::connectToVpn(const QString &serverId, DockerContainer contai
     }
 
     m_stageTimer.start();
+    m_isReconnectPending = false;
     qDebug() << QString("Trying to connect to VPN, server id is %1, container is %2, route mode is")
                         .arg(serverId)
                         .arg(ContainerUtils::containerToString(container))
@@ -380,6 +381,7 @@ void VpnConnection::connectToVpn(const QString &serverId, DockerContainer contai
 void VpnConnection::createProtocolConnections()
 {
     connect(m_vpnProtocol.data(), &VpnProtocol::protocolError, this, &VpnConnection::vpnProtocolError);
+    connect(m_vpnProtocol.data(), &VpnProtocol::splitTunnelFailed, this, &VpnConnection::splitTunnelFailed);
     connect(m_vpnProtocol.data(), &VpnProtocol::connectionStateChanged, this, &VpnConnection::setConnectionState);
     connect(m_vpnProtocol.data(), SIGNAL(bytesChanged(quint64, quint64)), this, SLOT(onBytesChanged(quint64, quint64)));
 
@@ -577,6 +579,12 @@ void VpnConnection::reconnectToVpn() {
     if (m_vpnProtocol.isNull())
         return;
 
+    if (m_connectionState == Vpn::ConnectionState::Connecting || m_connectionState == Vpn::ConnectionState::Reconnecting) {
+        qDebug() << "Reconnect triggered during connection, it will run after the current attempt";
+        m_isReconnectPending = true;
+        return;
+    }
+
     if (m_connectionState != Vpn::ConnectionState::Connected) {
         qWarning() << QString("Reconnect triggered on %1 during inappropriate state: %2; ignoring slot")
                               .arg(QMetaEnum::fromType<Vpn::ConnectionState>().valueToKey(m_connectionState));
@@ -661,10 +669,18 @@ void VpnConnection::setConnectionState(Vpn::ConnectionState state) {
 #ifdef AMNEZIA_DESKTOP
         if (state == Vpn::ConnectionState::Connecting || state == Vpn::ConnectionState::Reconnecting) {
             m_connectionTimeoutTimer.start();
-        } else {
+        } else if (state != Vpn::ConnectionState::Preparing) {
             m_connectionTimeoutTimer.stop();
         }
 #endif
+
+        if (state == Vpn::ConnectionState::Connected && m_isReconnectPending) {
+            QMetaObject::invokeMethod(this, &VpnConnection::reconnectToVpn, Qt::QueuedConnection);
+        }
+        if (state != Vpn::ConnectionState::Connecting && state != Vpn::ConnectionState::Reconnecting
+            && state != Vpn::ConnectionState::Preparing) {
+            m_isReconnectPending = false;
+        }
 
         if (state == Vpn::ConnectionState::Error) {
             emit lastErrorChanged(lastError());

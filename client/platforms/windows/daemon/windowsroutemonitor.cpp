@@ -17,7 +17,7 @@ Logger logger("WindowsRouteMonitor");
 // high metric. This ensures that we can skip over routes of our own
 // creation when processing route changes, and ensures that we give
 // way to other routing entries.
-constexpr const ULONG EXCLUSION_ROUTE_METRIC = 0x5e72;
+constexpr const ULONG EXCLUSION_ROUTE_METRIC = 0x5e7f;
 
 // Called by the kernel on route changes - perform some basic filtering and
 // invoke the routeChanged slot to do the real work.
@@ -66,8 +66,8 @@ WindowsRouteMonitor::WindowsRouteMonitor(quint64 luid, QObject* parent)
   // Purge orphans from a previous run: if the daemon died without
   // removing its exclusion routes, they stay in the table and blackhole
   // matching traffic (including the handshake to the VPN server itself)
-  // until reboot. The NETMGMT + EXCLUSION_ROUTE_METRIC pair is produced
-  // only by this code, so the cleanup cannot touch foreign routes.
+  // until reboot. EXCLUSION_ROUTE_METRIC differs from the 0x5e72 used by
+  // Mozilla VPN and the upstream client, so their routes are not touched.
   PMIB_IPFORWARD_TABLE2 table;
   if (GetIpForwardTable2(AF_UNSPEC, &table) == NO_ERROR) {
     ULONG stale = 0;
@@ -282,7 +282,7 @@ void WindowsRouteMonitor::updateCapturedRoutes(int family) {
 
   PMIB_IPFORWARD_TABLE2 table;
   DWORD error = GetIpForwardTable2(family, &table);
-  if (error != NO_ERROR) {
+  if (error == NO_ERROR) {
     updateCapturedRoutes(family, table);
     FreeMibTable(table);
   }
@@ -581,6 +581,9 @@ void WindowsRouteMonitor::setDetaultRouteCapture(bool enable) {
     flushRouteTable(m_clonedRoutes);
     return;
   }
+
+  QMetaObject::invokeMethod(this, &WindowsRouteMonitor::routeChanged,
+                            Qt::QueuedConnection);
 }
 
 void WindowsRouteMonitor::routeChanged() {

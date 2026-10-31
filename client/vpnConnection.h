@@ -64,6 +64,7 @@ signals:
     void connectionStateChanged(Vpn::ConnectionState state);
     void vpnProtocolError(amnezia::ErrorCode error);
     void lastErrorChanged(amnezia::ErrorCode error);
+    void splitTunnelFailed();
 
     void serviceIsNotReady();
 
@@ -95,6 +96,7 @@ private:
    Vpn::ConnectionState m_connectionState;
    QElapsedTimer m_stageTimer;
    QTimer m_connectionTimeoutTimer;
+   bool m_isReconnectPending = false;
 
    void logStage(const QString &stage) const;
    void onConnectionTimeout();

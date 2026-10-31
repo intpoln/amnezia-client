@@ -104,7 +104,6 @@ QString errorString(ErrorCode code) {
     case (ErrorCode::AddressPoolError): errorMessage = QObject::tr("VPN pool error: no available addresses"); break;
     case (ErrorCode::ConnectionTimeoutError): errorMessage = QObject::tr("Connection timed out: the server did not respond. Check your internet connection and try again"); break;
     case (ErrorCode::TunnelError): errorMessage = QObject::tr("VPN tunnel error. Details are in the logs"); break;
-    case (ErrorCode::SplitTunnelDriverError): errorMessage = QObject::tr("App split tunneling driver error: apps from the list could not bypass the VPN. Details are in the logs"); break;
 
     case (ErrorCode::ImportInvalidConfigError): errorMessage = QObject::tr("The config does not contain any containers and credentials for connecting to the server"); break;
     case (ErrorCode::ImportBackupFileUseRestoreInstead): errorMessage = QObject::tr("Backup files cannot be imported here. Use 'Restore from backup' instead."); break;

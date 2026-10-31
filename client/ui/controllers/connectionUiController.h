@@ -34,6 +34,7 @@ public slots:
 
     void openConnection();
     void closeConnection();
+    void reconnect();
 
     bool isRevokeBlockedDuringActiveConnection(const QString &serverId, int containerIndex, const QString &clientId) const;
 
@@ -46,6 +47,7 @@ signals:
     void connectionStateChanged();
 
     void connectionErrorOccurred(ErrorCode errorCode);
+    void splitTunnelFailed();
 
     void connectButtonClicked();
     void preparingConfig();
@@ -62,6 +64,7 @@ private:
 
     bool m_isConnected = false;
     bool m_isConnectionInProgress = false;
+    bool m_isReconnectRequested = false;
     QString m_connectionStateText = tr("Connect");
 
     Vpn::ConnectionState m_state;

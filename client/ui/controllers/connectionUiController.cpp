@@ -19,6 +19,7 @@ ConnectionUiController::ConnectionUiController(ConnectionController* connectionC
       m_serversController(serversController)
 {
     connect(m_connectionController, &ConnectionController::connectionStateChanged, this, &ConnectionUiController::onConnectionStateChanged);
+    connect(m_connectionController, &ConnectionController::splitTunnelFailed, this, &ConnectionUiController::splitTunnelFailed);
 
     connect(this, &ConnectionUiController::connectButtonClicked, this, &ConnectionUiController::toggleConnection, Qt::QueuedConnection);
 
@@ -46,6 +47,22 @@ void ConnectionUiController::closeConnection()
     m_connectionController->closeConnection();
 }
 
+void ConnectionUiController::reconnect()
+{
+    if (m_state == Vpn::ConnectionState::Preparing) {
+        emit preparingConfig();
+        return;
+    }
+
+    if (!isConnected() && !isConnectionInProgress()) {
+        toggleConnection();
+        return;
+    }
+
+    m_isReconnectRequested = true;
+    closeConnection();
+}
+
 ErrorCode ConnectionUiController::getLastConnectionError()
 {
     return m_connectionController->lastConnectionError();
@@ -54,6 +71,13 @@ ErrorCode ConnectionUiController::getLastConnectionError()
 void ConnectionUiController::onConnectionStateChanged(Vpn::ConnectionState state)
 {
     m_state = state;
+
+    if (m_isReconnectRequested && (state == Vpn::ConnectionState::Disconnected || state == Vpn::ConnectionState::Error)) {
+        m_isReconnectRequested = false;
+        if (state == Vpn::ConnectionState::Disconnected) {
+            QMetaObject::invokeMethod(this, &ConnectionUiController::toggleConnection, Qt::QueuedConnection);
+        }
+    }
 
     m_isConnected = false;
     m_connectionStateText = tr("Connecting...");

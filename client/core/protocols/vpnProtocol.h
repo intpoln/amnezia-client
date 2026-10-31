@@ -78,6 +78,7 @@ signals:
     void connectionStateChanged(Vpn::ConnectionState state);
     void timeoutTimerEvent();
     void protocolError(amnezia::ErrorCode e);
+    void splitTunnelFailed();
     void tunnelAddressesUpdated(const QString& gateway, const QString& localAddress);
 
 public slots:

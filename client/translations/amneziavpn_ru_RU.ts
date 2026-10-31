@@ -6602,11 +6602,6 @@ Only one can be active at a time: VPN or local proxy</source>
         <translation>Ошибка VPN-туннеля. Подробности в логах</translation>
     </message>
     <message>
-        <location filename="../core/utils/errorStrings.cpp" line="107"/>
-        <source>App split tunneling driver error: apps from the list could not bypass the VPN. Details are in the logs</source>
-        <translation>Ошибка драйвера раздельного туннелирования приложений: приложения из списка не смогли работать в обход VPN. Подробности в логах</translation>
-    </message>
-    <message>
         <location filename="../core/utils/errorStrings.cpp" line="114"/>
         <source>Unable to open config file</source>
         <translation>Не удалось открыть файл конфигурации</translation>
@@ -7661,6 +7656,38 @@ Remove the server from the app to continue.</source>
         <location filename="../ui/qml/main2.qml" line="287"/>
         <source>Cannot remove server during active connection</source>
         <translation>Невозможно удалить сервер во время активного соединения</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/main2.qml" line="312"/>
+        <source>App exclusions were not applied</source>
+        <translation>Исключения приложений не применились</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/main2.qml" line="313"/>
+        <source>The VPN is connected, but all apps, including the excluded ones, now go through the VPN.
+
+What can help:
+• Reconnect the VPN.
+• Check that the excluded apps and folders still exist.
+• Restart the computer: the split tunneling driver may have failed to start.
+• If nothing helps, save the logs in Settings → Logs and send them to support.</source>
+        <translation>VPN подключён, но все приложения, включая исключённые, теперь идут через VPN.
+
+Что может помочь:
+• Переподключите VPN.
+• Проверьте, что исключённые приложения и папки всё ещё существуют.
+• Перезагрузите компьютер: возможно, не запустился драйвер раздельного туннелирования.
+• Если ничего не помогло, сохраните логи в «Настройки → Логи» и отправьте их в поддержку.</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/main2.qml" line="314"/>
+        <source>Reconnect</source>
+        <translation>Переподключить</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/main2.qml" line="314"/>
+        <source>Close</source>
+        <translation>Закрыть</translation>
     </message>
 </context>
 </TS>

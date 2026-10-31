@@ -305,6 +305,17 @@ Window  {
         }
     }
 
+    Connections {
+        target: ConnectionController
+
+        function onSplitTunnelFailed() {
+            root.showQuestionDrawer(qsTr("App exclusions were not applied"),
+                                    qsTr("The VPN is connected, but all apps, including the excluded ones, now go through the VPN.\n\nWhat can help:\n• Reconnect the VPN.\n• Check that the excluded apps and folders still exist.\n• Restart the computer: the split tunneling driver may have failed to start.\n• If nothing helps, save the logs in Settings → Logs and send them to support."),
+                                    qsTr("Reconnect"), qsTr("Close"),
+                                    function() { ConnectionController.reconnect() }, null)
+        }
+    }
+
     function showQuestionDrawer(headerText, descriptionText, yesButtonText, noButtonText, yesButtonFunction, noButtonFunction) {
         questionDrawer.headerText = headerText
         questionDrawer.descriptionText = descriptionText
