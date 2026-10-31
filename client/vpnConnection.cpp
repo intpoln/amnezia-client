@@ -74,12 +74,8 @@ void VpnConnection::onBytesChanged(quint64 receivedBytes, quint64 sentBytes)
 void VpnConnection::onKillSwitchModeChanged(bool enabled)
 {
 #ifdef AMNEZIA_DESKTOP
-    IpcClient::withInterface([enabled](QSharedPointer<IpcInterfaceReplica> iface){
-        QRemoteObjectPendingReply<bool> reply = iface->refreshKillSwitch(enabled);
-        if (reply.waitForFinished() && reply.returnValue())
-            qDebug() << "VpnConnection::onKillSwitchModeChanged: Killswitch refreshed";
-        else
-            qWarning() << "VpnConnection::onKillSwitchModeChanged: Failed to execute remote refreshKillSwitch call";
+    IpcClient::withInterface([this, enabled](QSharedPointer<IpcInterfaceReplica> iface){
+        watchIpcReply(iface->refreshKillSwitch(enabled), "Failed to execute remote refreshKillSwitch call");
     });
 #endif
 }
@@ -136,7 +132,7 @@ void VpnConnection::onConnectionStateChanged(Vpn::ConnectionState state)
     IpcClient::withInterface([&](QSharedPointer<IpcInterfaceReplica> iface) {
         switch (state) {
             case Vpn::ConnectionState::Connected: {
-                requestDnsFlush(iface);
+                watchIpcReply(iface->flushDns(), "Failed to flush DNS");
 
                 if (!ContainerUtils::isAwgContainer(container) && container != DockerContainer::WireGuard) {
                     QString dns1 = m_vpnConfiguration.value(configKey::dns1).toString();
@@ -171,13 +167,8 @@ void VpnConnection::onConnectionStateChanged(Vpn::ConnectionState state)
             } break;
             case Vpn::ConnectionState::Disconnected:
             case Vpn::ConnectionState::Error: {
-                requestDnsFlush(iface);
-
-                auto clearSavedRoutes = iface->clearSavedRoutes();
-                if (clearSavedRoutes.waitForFinished() && clearSavedRoutes.returnValue())
-                    qDebug() << "VpnConnection::onConnectionStateChanged: Successfully cleared saved routes";
-                else
-                    qWarning() << "VpnConnection::onConnectionStateChanged: Failed to clear saved routes";
+                watchIpcReply(iface->flushDns(), "Failed to flush DNS");
+                watchIpcReply(iface->clearSavedRoutes(), "Failed to clear saved routes");
             } break;
             default:
                 break;
@@ -197,12 +188,12 @@ void VpnConnection::onConnectionStateChanged(Vpn::ConnectionState state)
 }
 
 #ifdef AMNEZIA_DESKTOP
-void VpnConnection::requestDnsFlush(const QSharedPointer<IpcInterfaceReplica> &iface)
+void VpnConnection::watchIpcReply(const QRemoteObjectPendingCall &reply, const QString &failureMessage)
 {
-    auto *watcher = new QRemoteObjectPendingCallWatcher(iface->flushDns(), this);
-    connect(watcher, &QRemoteObjectPendingCallWatcher::finished, this, [](QRemoteObjectPendingCallWatcher *call) {
+    auto *watcher = new QRemoteObjectPendingCallWatcher(reply, this);
+    connect(watcher, &QRemoteObjectPendingCallWatcher::finished, this, [failureMessage](QRemoteObjectPendingCallWatcher *call) {
         if (call->error() != QRemoteObjectPendingCall::NoError || !call->returnValue().toBool()) {
-            qWarning() << "VpnConnection: Failed to flush DNS";
+            qWarning().noquote() << "VpnConnection:" << failureMessage;
         }
         call->deleteLater();
     });
@@ -288,7 +279,8 @@ void VpnConnection::addSitesRoutes(const QString &gw, amnezia::RouteMode mode)
 
             // Async flush: never waitForFinished() here — that re-enters the event loop and
             // can re-enter this QHostInfo callback until the stack overflows (0xc00000fd).
-            IpcClient::withInterface([this](QSharedPointer<IpcInterfaceReplica> iface) { requestDnsFlush(iface); });
+            IpcClient::withInterface(
+                    [this](QSharedPointer<IpcInterfaceReplica> iface) { watchIpcReply(iface->flushDns(), "Failed to flush DNS"); });
         };
         QHostInfo::lookupHost(site, this, cbResolv);
     }
@@ -665,28 +657,27 @@ void VpnConnection::onConnectionTimeout()
 }
 
 void VpnConnection::setConnectionState(Vpn::ConnectionState state) {
+    if (state != Vpn::Disconnected || m_connectionState != Vpn::Reconnecting) {
+#ifdef AMNEZIA_DESKTOP
+        if (state == Vpn::ConnectionState::Connecting || state == Vpn::ConnectionState::Reconnecting) {
+            m_connectionTimeoutTimer.start();
+        } else {
+            m_connectionTimeoutTimer.stop();
+        }
+#endif
+
+        if (state == Vpn::ConnectionState::Error) {
+            emit lastErrorChanged(lastError());
+        }
+
+        m_connectionState = state;
+        emit connectionStateChanged(state);
+    }
+
     QElapsedTimer serviceCallsTimer;
     serviceCallsTimer.start();
     onConnectionStateChanged(state);
     logStage(QString("state %1, service calls took %2 ms")
                      .arg(QMetaEnum::fromType<Vpn::ConnectionState>().valueToKey(state))
                      .arg(serviceCallsTimer.elapsed()));
-
-    if (state == Vpn::Disconnected && m_connectionState == Vpn::Reconnecting)
-        return;
-
-#ifdef AMNEZIA_DESKTOP
-    if (state == Vpn::ConnectionState::Connecting || state == Vpn::ConnectionState::Reconnecting) {
-        m_connectionTimeoutTimer.start();
-    } else {
-        m_connectionTimeoutTimer.stop();
-    }
-#endif
-
-    if (state == Vpn::ConnectionState::Error) {
-        emit lastErrorChanged(lastError());
-    }
-
-    m_connectionState = state;
-    emit connectionStateChanged(state);
 }

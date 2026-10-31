@@ -105,7 +105,7 @@ private:
    void appendKillSwitchConfig();
 
 #ifdef AMNEZIA_DESKTOP
-   void requestDnsFlush(const QSharedPointer<IpcInterfaceReplica> &iface);
+   void watchIpcReply(const QRemoteObjectPendingCall &reply, const QString &failureMessage);
 #endif
 };
 
