@@ -6,6 +6,7 @@
 
 #include <QNetworkInformation>
 #include <QScopeGuard>
+#include <QStringList>
 
 #include "leakdetector.h"
 #include "logger.h"
@@ -17,15 +18,25 @@
 
 namespace {
 Logger logger("WindowsNetworkWatcher");
+constexpr int networkCheckDelayMsec = 2000;
 }
 
 WindowsNetworkWatcher::WindowsNetworkWatcher(QObject* parent)
     : NetworkWatcherImpl(parent) {
   MZ_COUNT_CTOR(WindowsNetworkWatcher);
+
+  m_networkCheckTimer.setSingleShot(true);
+  m_networkCheckTimer.setInterval(networkCheckDelayMsec);
+  connect(&m_networkCheckTimer, &QTimer::timeout, this,
+          &WindowsNetworkWatcher::checkNetwork);
 }
 
 WindowsNetworkWatcher::~WindowsNetworkWatcher() {
   MZ_COUNT_DTOR(WindowsNetworkWatcher);
+
+  if (m_routeHandle) {
+    CancelMibChangeNotify2(m_routeHandle);
+  }
 
   if (m_wlanHandle) {
     WlanCloseHandle(m_wlanHandle, nullptr);
@@ -53,6 +64,13 @@ LRESULT WindowsNetworkWatcher::PowerWndProcCallback(HWND hwnd, UINT uMsg, WPARAM
 void WindowsNetworkWatcher::initialize() {
   logger.debug() << "initialize";
 
+  createPowerMonitorWindow();
+
+  m_defaultRoutes = defaultRoutesSignature();
+  if (NotifyRouteChange2(AF_INET, routeChangeCallback, this, FALSE,
+                         &m_routeHandle) != NO_ERROR) {
+    WindowsUtils::windowsLog("Failed to register a route change callback");
+  }
 
   DWORD negotiatedVersion;
   if (WlanOpenHandle(2, nullptr, &negotiatedVersion, &m_wlanHandle) !=
@@ -70,6 +88,10 @@ void WindowsNetworkWatcher::initialize() {
     return;
   }
 
+  logger.debug() << "callback registered";
+}
+
+void WindowsNetworkWatcher::createPowerMonitorWindow() {
   const wchar_t* className = L"PowerMonitorClass";
   WNDCLASS wc = { 0 };
   wc.lpfnWndProc = &WindowsNetworkWatcher::PowerWndProcCallback;
@@ -88,8 +110,79 @@ void WindowsNetworkWatcher::initialize() {
     return;
   }
   SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+}
 
-  logger.debug() << "callback registered";
+// static
+void WindowsNetworkWatcher::routeChangeCallback(PVOID context,
+                                                PMIB_IPFORWARD_ROW2 row,
+                                                MIB_NOTIFICATION_TYPE type) {
+  Q_UNUSED(type);
+  if (!row || row->DestinationPrefix.PrefixLength != 0) {
+    return;
+  }
+
+  static_cast<WindowsNetworkWatcher*>(context)->scheduleNetworkCheck(false);
+}
+
+// static
+QString WindowsNetworkWatcher::defaultRoutesSignature() {
+  PMIB_IPFORWARD_TABLE2 table = nullptr;
+  if (GetIpForwardTable2(AF_INET, &table) != NO_ERROR) {
+    return QString();
+  }
+  auto guard = qScopeGuard([&] { FreeMibTable(table); });
+
+  QStringList routes;
+  for (ULONG i = 0; i < table->NumEntries; ++i) {
+    const MIB_IPFORWARD_ROW2& route = table->Table[i];
+    if (route.DestinationPrefix.PrefixLength != 0) {
+      continue;
+    }
+
+    MIB_IF_ROW2 adapter = {};
+    adapter.InterfaceLuid = route.InterfaceLuid;
+    if (GetIfEntry2(&adapter) != NO_ERROR ||
+        !adapter.InterfaceAndOperStatusFlags.HardwareInterface ||
+        adapter.OperStatus != IfOperStatusUp) {
+      continue;
+    }
+
+    char nextHop[INET_ADDRSTRLEN] = {};
+    InetNtopA(AF_INET, &route.NextHop.Ipv4.sin_addr, nextHop,
+              sizeof(nextHop));
+    routes.append(QString("%1 %2").arg(route.InterfaceLuid.Value).arg(nextHop));
+  }
+  routes.sort();
+  return routes.join(',');
+}
+
+void WindowsNetworkWatcher::scheduleNetworkCheck(bool bssidChanged) {
+  QMetaObject::invokeMethod(
+      this,
+      [this, bssidChanged]() {
+        m_bssidChanged = m_bssidChanged || bssidChanged;
+        m_networkCheckTimer.start();
+      },
+      Qt::QueuedConnection);
+}
+
+void WindowsNetworkWatcher::checkNetwork() {
+  const QString defaultRoutes = defaultRoutesSignature();
+  const bool routesChanged =
+      !defaultRoutes.isEmpty() && defaultRoutes != m_defaultRoutes;
+  if (!defaultRoutes.isEmpty()) {
+    m_defaultRoutes = defaultRoutes;
+  }
+
+  const bool bssidChanged = m_bssidChanged;
+  m_bssidChanged = false;
+  if (!isActive() || (!routesChanged && !bssidChanged)) {
+    return;
+  }
+
+  logger.debug() << "The network has changed, routes changed:" << routesChanged
+                 << "wifi changed:" << bssidChanged;
+  emit networkChanged(QString());
 }
 
 // static
@@ -147,7 +240,7 @@ void WindowsNetworkWatcher::processWlan(PWLAN_NOTIFICATION_DATA data) {
     }
   }
   if (bssid != m_lastBSSID) {
-    emit networkChanged(bssid);
+    scheduleNetworkCheck(true);
     m_lastBSSID = bssid;
   }
 

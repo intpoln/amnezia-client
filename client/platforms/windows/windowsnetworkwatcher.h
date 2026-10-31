@@ -5,8 +5,12 @@
 #ifndef WINDOWSNETWORKWATCHER_H
 #define WINDOWSNETWORKWATCHER_H
 
+#include <WS2tcpip.h>
+#include <iphlpapi.h>
 #include <windows.h>
 #include <wlanapi.h>
+
+#include <QTimer>
 
 #include "networkwatcherimpl.h"
 
@@ -20,7 +24,13 @@ class WindowsNetworkWatcher final : public NetworkWatcherImpl {
  private:
   static void wlanCallback(PWLAN_NOTIFICATION_DATA data, PVOID context);
   static LRESULT PowerWndProcCallback(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+  static void routeChangeCallback(PVOID context, PMIB_IPFORWARD_ROW2 row,
+                                  MIB_NOTIFICATION_TYPE type);
+  static QString defaultRoutesSignature();
 
+  void createPowerMonitorWindow();
+  void scheduleNetworkCheck(bool bssidChanged);
+  void checkNetwork();
   void processWlan(PWLAN_NOTIFICATION_DATA data);
 
  private:
@@ -28,6 +38,11 @@ class WindowsNetworkWatcher final : public NetworkWatcherImpl {
   // to inform about network changes.
   HANDLE m_wlanHandle = nullptr;
   QString m_lastBSSID;
+
+  HANDLE m_routeHandle = nullptr;
+  QTimer m_networkCheckTimer;
+  QString m_defaultRoutes;
+  bool m_bssidChanged = false;
 };
 
 #endif  // WINDOWSNETWORKWATCHER_H
