@@ -146,7 +146,9 @@ Window  {
 
         onActionTriggered: {
             if (actionId === "retry") {
-                ConnectionController.connectButtonClicked()
+                if (!ConnectionController.isConnected && !ConnectionController.isConnectionInProgress) {
+                    ConnectionController.connectButtonClicked()
+                }
             } else if (actionId === "openLogs") {
                 PageController.goToPage(PageEnum.PageSettingsLogging)
             }

@@ -44,6 +44,7 @@ void ConnectionUiController::openConnection()
 
 void ConnectionUiController::closeConnection()
 {
+    m_isReconnectRequested = false;
     m_connectionController->closeConnection();
 }
 
@@ -59,8 +60,28 @@ void ConnectionUiController::reconnect()
         return;
     }
 
-    m_isReconnectRequested = true;
     closeConnection();
+    m_isReconnectRequested = true;
+}
+
+bool ConnectionUiController::isReconnectNeeded() const
+{
+    return m_isReconnectNeeded;
+}
+
+void ConnectionUiController::onAppExclusionsChanged()
+{
+    if (isConnected() || isConnectionInProgress()) {
+        setReconnectNeeded(true);
+    }
+}
+
+void ConnectionUiController::setReconnectNeeded(bool isReconnectNeeded)
+{
+    if (m_isReconnectNeeded != isReconnectNeeded) {
+        m_isReconnectNeeded = isReconnectNeeded;
+        emit isReconnectNeededChanged();
+    }
 }
 
 ErrorCode ConnectionUiController::getLastConnectionError()
@@ -71,6 +92,10 @@ ErrorCode ConnectionUiController::getLastConnectionError()
 void ConnectionUiController::onConnectionStateChanged(Vpn::ConnectionState state)
 {
     m_state = state;
+
+    if (state == Vpn::ConnectionState::Disconnected || state == Vpn::ConnectionState::Error) {
+        setReconnectNeeded(false);
+    }
 
     if (m_isReconnectRequested && (state == Vpn::ConnectionState::Disconnected || state == Vpn::ConnectionState::Error)) {
         m_isReconnectRequested = false;

@@ -5,6 +5,7 @@
 #include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QProcess>
 #include <QProcessEnvironment>
 #include <QSignalSpy>
 #include <QTemporaryDir>
@@ -121,12 +122,32 @@ private slots:
 
         QVERIFY(folderExecutables::find(dir.filePath("missing")).isEmpty());
 
-        QVERIFY(folderExecutables::hasDriveLetter(dir.path()));
-        QVERIFY(folderExecutables::hasDriveLetter("d:/Games"));
-        QVERIFY(!folderExecutables::hasDriveLetter("//server/share/Games"));
-        QVERIFY(!folderExecutables::hasDriveLetter("\\\\server\\share"));
-        QVERIFY(!folderExecutables::hasDriveLetter("Games"));
+        QVERIFY(folderExecutables::isLocalFolder(dir.path()));
+        QVERIFY(folderExecutables::isLocalFolder("d:/Games"));
+        QVERIFY(!folderExecutables::isLocalFolder("//server/share/Games"));
+        QVERIFY(!folderExecutables::isLocalFolder("\\\\server\\share"));
+        QVERIFY(!folderExecutables::isLocalFolder("Games"));
     }
+
+#ifdef Q_OS_WIN
+    void testFolderExecutablesJunctionRoot()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        QVERIFY(QDir(dir.path()).mkpath("target"));
+        QFile exe(dir.filePath("target/game.exe"));
+        QVERIFY(exe.open(QIODevice::WriteOnly));
+        exe.close();
+
+        const QString link = dir.filePath("link");
+        const QStringList mklinkArgs { "/c", "mklink", "/J", QDir::toNativeSeparators(link),
+                                       QDir::toNativeSeparators(dir.filePath("target")) };
+        QCOMPARE(QProcess::execute("cmd", mklinkArgs), 0);
+
+        const QString target = QFileInfo(dir.filePath("target")).canonicalFilePath();
+        QCOMPARE(folderExecutables::find(link), QStringList({ target + "/game.exe" }));
+    }
+#endif
 
     void testFolders()
     {

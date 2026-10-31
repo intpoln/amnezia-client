@@ -18,6 +18,7 @@ public:
     Q_PROPERTY(bool isConnected READ isConnected NOTIFY connectionStateChanged)
     Q_PROPERTY(bool isConnectionInProgress READ isConnectionInProgress NOTIFY connectionStateChanged)
     Q_PROPERTY(QString connectionStateText READ connectionStateText NOTIFY connectionStateChanged)
+    Q_PROPERTY(bool isReconnectNeeded READ isReconnectNeeded NOTIFY isReconnectNeededChanged)
 
     explicit ConnectionUiController(ConnectionController* connectionController,
                                     ServersController* serversController,
@@ -28,6 +29,7 @@ public:
     bool isConnected() const;
     bool isConnectionInProgress() const;
     QString connectionStateText() const;
+    bool isReconnectNeeded() const;
 
 public slots:
     void toggleConnection();
@@ -40,11 +42,13 @@ public slots:
 
     ErrorCode getLastConnectionError();
     void onConnectionStateChanged(Vpn::ConnectionState state);
+    void onAppExclusionsChanged();
 
     void onTranslationsUpdated();
 
 signals:
     void connectionStateChanged();
+    void isReconnectNeededChanged();
 
     void connectionErrorOccurred(ErrorCode errorCode);
     void splitTunnelFailed();
@@ -58,6 +62,7 @@ signals:
 private:
     Vpn::ConnectionState getCurrentConnectionState();
     void notifyConnectionBlocked(ErrorCode errorCode);
+    void setReconnectNeeded(bool isReconnectNeeded);
 
     ConnectionController* m_connectionController;
     ServersController* m_serversController;
@@ -65,6 +70,7 @@ private:
     bool m_isConnected = false;
     bool m_isConnectionInProgress = false;
     bool m_isReconnectRequested = false;
+    bool m_isReconnectNeeded = false;
     QString m_connectionStateText = tr("Connect");
 
     Vpn::ConnectionState m_state;

@@ -247,8 +247,13 @@ PageType {
         }
 
         function onChangeApiCountryFinished(message) {
+            const isActiveServerChanged = ConnectionController.isConnected
+                                          && ServersUiController.processedServerId === ServersUiController.defaultServerId
             PageController.goToPageHome()
             PageController.showNotificationMessage(message)
+            if (isActiveServerChanged) {
+                ConnectionController.reconnect()
+            }
         }
 
         function onReloadServerFromApiFinished(message) {

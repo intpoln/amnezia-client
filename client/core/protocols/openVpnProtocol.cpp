@@ -83,6 +83,13 @@ void OpenVpnProtocol::stop()
     }
 }
 
+void OpenVpnProtocol::setAppSplitTunnelingConfig(const QJsonObject &configuration)
+{
+    VpnProtocol::setAppSplitTunnelingConfig(configuration);
+    m_configData.insert(configKey::appSplitTunnelType, configuration.value(configKey::appSplitTunnelType));
+    m_configData.insert(configKey::splitTunnelApps, configuration.value(configKey::splitTunnelApps));
+}
+
 ErrorCode OpenVpnProtocol::prepare()
 {
     return IpcClient::withInterface([](QSharedPointer<IpcInterfaceReplica> iface) {

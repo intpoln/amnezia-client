@@ -6,16 +6,55 @@
 #include <QFileInfo>
 #include <QSet>
 
-bool folderExecutables::hasDriveLetter(const QString &folderPath)
+#ifdef Q_OS_WIN
+    #include <windows.h>
+#endif
+
+bool folderExecutables::isLocalFolder(const QString &folderPath)
 {
     const QString cleanPath = QDir::cleanPath(folderPath);
-    return cleanPath.size() >= 2 && cleanPath.at(0).isLetter() && cleanPath.at(1) == QLatin1Char(':');
+    if (cleanPath.size() < 2 || !cleanPath.at(0).isLetter() || cleanPath.at(1) != QLatin1Char(':')) {
+        return false;
+    }
+#ifdef Q_OS_WIN
+    const QString driveRoot = cleanPath.left(2) + QLatin1Char('\\');
+    return GetDriveTypeW(reinterpret_cast<const wchar_t *>(driveRoot.utf16())) != DRIVE_REMOTE;
+#else
+    return true;
+#endif
+}
+
+namespace
+{
+    QString realFolderPath(const QString &folderPath)
+    {
+#ifdef Q_OS_WIN
+        const QString nativePath = QDir::toNativeSeparators(QDir::cleanPath(folderPath));
+        HANDLE handle = CreateFileW(reinterpret_cast<const wchar_t *>(nativePath.utf16()), 0,
+                                    FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING,
+                                    FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+        if (handle != INVALID_HANDLE_VALUE) {
+            wchar_t buffer[MAX_PATH * 4];
+            const DWORD length =
+                    GetFinalPathNameByHandleW(handle, buffer, std::size(buffer), FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
+            CloseHandle(handle);
+
+            const QString finalPath = QString::fromWCharArray(buffer, length);
+            const QLatin1String localPrefix("\\\\?\\");
+            if (length > 0 && length < std::size(buffer) && finalPath.startsWith(localPrefix)
+                && !finalPath.startsWith(QLatin1String("\\\\?\\UNC\\"))) {
+                return QDir::cleanPath(QDir::fromNativeSeparators(finalPath.mid(localPrefix.size())));
+            }
+        }
+#endif
+        return QDir::cleanPath(folderPath);
+    }
 }
 
 QStringList folderExecutables::find(const QString &folderPath)
 {
     QStringList executables;
-    QStringList pendingDirs { QDir::cleanPath(folderPath) };
+    QStringList pendingDirs { realFolderPath(folderPath) };
 
     while (!pendingDirs.isEmpty() && executables.size() < maxExecutables) {
         QDirIterator it(pendingDirs.takeLast(), QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System);

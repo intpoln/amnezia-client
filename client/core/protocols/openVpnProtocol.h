@@ -22,6 +22,7 @@ public:
     void stop() override;
 
     ErrorCode prepare() override;
+    void setAppSplitTunnelingConfig(const QJsonObject &configuration) override;
     static QString defaultConfigFileName();
     static QString defaultConfigPath();
 

@@ -116,7 +116,7 @@ void AppSplitTunnelingUiController::scanFolders()
 
 void AppSplitTunnelingUiController::addFolderPath(const QString &folderPath)
 {
-    if (!folderExecutables::hasDriveLetter(folderPath)) {
+    if (!folderExecutables::isLocalFolder(folderPath)) {
         emit errorOccurred(tr("Network folders are not supported, choose a folder on a local drive"));
         return;
     }

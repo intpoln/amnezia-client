@@ -22,7 +22,6 @@ PageType {
 
     readonly property bool isWindows: Qt.platform.os === "windows"
     property bool pageEnabled
-    property bool hasChangesToApply: false
 
     Component.onCompleted: {
         if (root.isWindows) {
@@ -45,22 +44,6 @@ PageType {
 
         function onErrorOccurred(errorMessage) {
             PageController.showErrorMessage(errorMessage)
-        }
-
-        function onExclusionsChanged() {
-            if (ConnectionController.isConnected || ConnectionController.isConnectionInProgress) {
-                root.hasChangesToApply = true
-            }
-        }
-    }
-
-    Connections {
-        target: ConnectionController
-
-        function onConnectionStateChanged() {
-            if (!ConnectionController.isConnected && !ConnectionController.isConnectionInProgress) {
-                root.hasChangesToApply = false
-            }
         }
     }
 
@@ -218,7 +201,7 @@ PageType {
                 Layout.rightMargin: 16
                 Layout.bottomMargin: 16
 
-                visible: root.isWindows && ConnectionController.isConnected && root.hasChangesToApply
+                visible: root.isWindows && ConnectionController.isConnected && ConnectionController.isReconnectNeeded
 
                 text: qsTr("Reconnect")
 

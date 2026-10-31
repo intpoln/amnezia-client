@@ -45,13 +45,12 @@ PageType {
 
     function selectConnectionCountry(countryCode, countryName) {
         if (countryCode === ApiCountryModel.currentCountryCode) {
-            return false
+            return
         }
 
         PageController.showBusyIndicator(true)
-        const isUpdated = SubscriptionUiController.updateServiceFromGateway(ServersUiController.processedServerId, countryCode, countryName)
+        SubscriptionUiController.updateServiceFromGateway(ServersUiController.processedServerId, countryCode, countryName)
         PageController.showBusyIndicator(false)
-        return isUpdated
     }
 
     readonly property bool showSubscriptionNote: root.subscriptionExpired || root.subscriptionExpiringSoon
@@ -71,11 +70,7 @@ PageType {
             Dialogs.askQuestion(qsTr("Switch to %1?").arg(countryName),
                                 qsTr("The VPN will briefly disconnect and connect to the new location"),
                                 qsTr("Switch"), qsTr("Cancel"),
-                                function() {
-                                    if (root.selectConnectionCountry(countryCode, countryName)) {
-                                        ConnectionController.reconnect()
-                                    }
-                                }, function() {})
+                                function() { root.selectConnectionCountry(countryCode, countryName) }, function() {})
             return
         }
         root.selectConnectionCountry(countryCode, countryName)

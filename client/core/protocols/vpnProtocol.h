@@ -65,7 +65,7 @@ public:
     ErrorCode lastError() const;
     QString textConnectionState() const;
     void setLastError(ErrorCode lastError);
-    void setAppSplitTunnelingConfig(const QJsonObject &configuration);
+    virtual void setAppSplitTunnelingConfig(const QJsonObject &configuration);
 
     QString routeGateway() const;
     QString vpnGateway() const;

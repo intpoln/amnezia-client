@@ -409,6 +409,7 @@ void CoreSignalHandlers::initAppSplitTunnelingModelUpdateHandler()
     connect(m_coreController->m_appSettingsRepository, &SecureAppSettingsRepository::appsChanged, m_coreController->m_appSplitTunnelingUiController, &AppSplitTunnelingUiController::updateModel);
     connect(m_coreController->m_appSettingsRepository, &SecureAppSettingsRepository::appsSplitTunnelingEnabledChanged, m_coreController->m_appSplitTunnelingUiController, &AppSplitTunnelingUiController::updateModel);
     connect(m_coreController->m_appSettingsRepository, &SecureAppSettingsRepository::appsRouteModeChanged, m_coreController->m_appSplitTunnelingUiController, &AppSplitTunnelingUiController::updateModel);
+    connect(m_coreController->m_appSplitTunnelingUiController, &AppSplitTunnelingUiController::exclusionsChanged, m_coreController->m_connectionUiController, &ConnectionUiController::onAppExclusionsChanged);
 }
 
 void CoreSignalHandlers::initPrepareConfigHandler()
