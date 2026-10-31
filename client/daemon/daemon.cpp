@@ -511,6 +511,7 @@ bool Daemon::parseConfig(const QJsonObject& obj, InterfaceConfig& config) {
 
 bool Daemon::deactivate(bool emitSignals) {
   Q_ASSERT(wgutils() != nullptr);
+  m_handshakeTimer.stop();
 
   // Deactivate the main interface.
   if (!m_connections.isEmpty()) {
