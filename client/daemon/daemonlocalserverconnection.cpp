@@ -108,6 +108,7 @@ void DaemonLocalServerConnection::parseCommand(const QByteArray& data) {
     InterfaceConfig config;
     if (!Daemon::parseConfig(obj, config)) {
       logger.error() << "Invalid configuration";
+      backendFailure(DaemonError::ERROR_FATAL);
       emit disconnected();
       return;
     }
@@ -117,6 +118,7 @@ void DaemonLocalServerConnection::parseCommand(const QByteArray& data) {
     if (!Daemon::instance()->activate(config)) {
       logger.error() << "Failed to activate the interface after"
                      << activationTimer.elapsed() << "ms";
+      backendFailure(DaemonError::ERROR_FATAL);
       emit disconnected();
       return;
     }

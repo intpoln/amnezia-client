@@ -6592,6 +6592,21 @@ Only one can be active at a time: VPN or local proxy</source>
         <translation>Ошибка пула VPN: нет доступных адресов</translation>
     </message>
     <message>
+        <location filename="../core/utils/errorStrings.cpp" line="105"/>
+        <source>Connection timed out: the server did not respond. Check your internet connection and try again</source>
+        <translation>Время ожидания подключения истекло: сервер не ответил. Проверьте подключение к интернету и попробуйте снова</translation>
+    </message>
+    <message>
+        <location filename="../core/utils/errorStrings.cpp" line="106"/>
+        <source>VPN tunnel error. Details are in the logs</source>
+        <translation>Ошибка VPN-туннеля. Подробности в логах</translation>
+    </message>
+    <message>
+        <location filename="../core/utils/errorStrings.cpp" line="107"/>
+        <source>App split tunneling driver error: apps from the list could not bypass the VPN. Details are in the logs</source>
+        <translation>Ошибка драйвера раздельного туннелирования приложений: приложения из списка не смогли работать в обход VPN. Подробности в логах</translation>
+    </message>
+    <message>
         <location filename="../core/utils/errorStrings.cpp" line="114"/>
         <source>Unable to open config file</source>
         <translation>Не удалось открыть файл конфигурации</translation>

@@ -39,6 +39,15 @@ WireguardProtocol::WireguardProtocol(const QJsonObject &configuration, QObject *
 
     connect(m_impl.get(), &ControllerImpl::disconnected, this,
             [this]() { setConnectionState(Vpn::ConnectionState::Disconnected); });
+    connect(m_impl.get(), &ControllerImpl::backendFailure, this, [this](DaemonError error) {
+        if (m_connectionState == Vpn::ConnectionState::Error) {
+            return;
+        }
+        const bool isSplitTunnelError = error == DaemonError::ERROR_SPLIT_TUNNEL_INIT_FAILURE
+                || error == DaemonError::ERROR_SPLIT_TUNNEL_START_FAILURE
+                || error == DaemonError::ERROR_SPLIT_TUNNEL_EXCLUDE_FAILURE;
+        setLastError(isSplitTunnelError ? ErrorCode::SplitTunnelDriverError : ErrorCode::TunnelError);
+    });
     m_impl->initialize(nullptr, nullptr);
 }
 

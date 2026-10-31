@@ -63,6 +63,7 @@ signals:
     void bytesChanged(quint64 receivedBytes, quint64 sentBytes);
     void connectionStateChanged(Vpn::ConnectionState state);
     void vpnProtocolError(amnezia::ErrorCode error);
+    void lastErrorChanged(amnezia::ErrorCode error);
 
     void serviceIsNotReady();
 
@@ -93,8 +94,10 @@ private:
 
    Vpn::ConnectionState m_connectionState;
    QElapsedTimer m_stageTimer;
+   QTimer m_connectionTimeoutTimer;
 
    void logStage(const QString &stage) const;
+   void onConnectionTimeout();
    void createProtocolConnections();
 
    void appendSplitTunnelingConfig();

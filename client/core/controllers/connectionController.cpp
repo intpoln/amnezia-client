@@ -28,6 +28,8 @@ ConnectionController::ConnectionController(SecureServersRepository* serversRepos
       m_appSettingsRepository(appSettingsRepository),
       m_vpnConnection(vpnConnection)
 {
+    connect(m_vpnConnection, &VpnConnection::lastErrorChanged, this,
+            [this](ErrorCode error) { m_lastConnectionError = error; });
     connect(m_vpnConnection, &VpnConnection::connectionStateChanged, this, &ConnectionController::connectionStateChanged);
     connect(this, &ConnectionController::openConnectionRequested, m_vpnConnection, &VpnConnection::connectToVpn, Qt::QueuedConnection);
     connect(this, &ConnectionController::closeConnectionRequested, m_vpnConnection, &VpnConnection::disconnectFromVpn, Qt::QueuedConnection);
@@ -250,7 +252,7 @@ void ConnectionController::onKillSwitchModeChanged(bool enabled)
 
 ErrorCode ConnectionController::lastConnectionError() const
 {
-    return m_vpnConnection->lastError();
+    return m_lastConnectionError;
 }
 
 QJsonObject ConnectionController::createConnectionConfiguration(const QPair<QString, QString> &dns,

@@ -79,6 +79,7 @@ private:
     SecureServersRepository* m_serversRepository;
     SecureAppSettingsRepository* m_appSettingsRepository;
     VpnConnection* m_vpnConnection;
+    ErrorCode m_lastConnectionError = ErrorCode::NoError;
 };
 
 #endif

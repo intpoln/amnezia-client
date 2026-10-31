@@ -467,14 +467,14 @@ void LocalSocketController::parseCommand(const QByteArray& command) {
     if (!obj.contains("errorCode")) {
       // report a generic error if we dont know what it is.
       logger.error() << "generic backend failure error";
-      // REPORTERROR(ErrorHandler::ControllerError, "controller");
+      emit backendFailure(DaemonError::ERROR_FATAL);
       return;
     }
     auto errorCode = static_cast<uint8_t>(obj["errorCode"].toInt());
     if (errorCode >= (uint8_t)DaemonError::DAEMON_ERROR_MAX) {
       // Also report a generic error if the code is invalid.
       logger.error() << "invalid backend failure error code";
-      // REPORTERROR(ErrorHandler::ControllerError, "controller");
+      emit backendFailure(DaemonError::ERROR_FATAL);
       return;
     }
     switch (static_cast<DaemonError>(errorCode)) {
@@ -482,7 +482,6 @@ void LocalSocketController::parseCommand(const QByteArray& command) {
         [[fallthrough]];
       case DaemonError::ERROR_FATAL:
         logger.error() << "generic backend failure error (fatal or error none)";
-        // REPORTERROR(ErrorHandler::ControllerError, "controller");
         break;
       case DaemonError::ERROR_SPLIT_TUNNEL_INIT_FAILURE:
         [[fallthrough]];
@@ -490,13 +489,14 @@ void LocalSocketController::parseCommand(const QByteArray& command) {
         [[fallthrough]];
       case DaemonError::ERROR_SPLIT_TUNNEL_EXCLUDE_FAILURE:
         logger.error() << "split tunnel backend failure error";
-        //REPORTERROR(ErrorHandler::SplitTunnelError, "controller");
         break;
       case DaemonError::DAEMON_ERROR_MAX:
         // We should not get here.
         Q_ASSERT(false);
         break;
     }
+    emit backendFailure(static_cast<DaemonError>(errorCode));
+    return;
   }
 
   if (type == "logs") {

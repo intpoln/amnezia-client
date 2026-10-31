@@ -76,6 +76,9 @@ namespace amnezia
         OpenVpnUnknownError = 701,
         OpenVpnTapAdapterError = 702,
         AddressPoolError = 703,
+        ConnectionTimeoutError = 750,
+        TunnelError = 751,
+        SplitTunnelDriverError = 752,
 
         // 3rd party utils errors
         OpenSslFailed = 800,

@@ -37,13 +37,24 @@
 
 using namespace ProtocolUtils;
 
+namespace
+{
+    constexpr int connectionTimeoutMsec = 40000;
+}
+
 VpnConnection::VpnConnection(SecureServersRepository* serversRepository, SecureAppSettingsRepository* appSettingsRepository, QObject *parent)
     : QObject(parent),
       m_serversRepository(serversRepository),
       m_appSettingsRepository(appSettingsRepository),
       m_checkTimer(this),
-      m_connectionState(Vpn::ConnectionState::Disconnected)
+      m_connectionState(Vpn::ConnectionState::Disconnected),
+      m_connectionTimeoutTimer(this)
 {
+#ifdef AMNEZIA_DESKTOP
+    m_connectionTimeoutTimer.setSingleShot(true);
+    m_connectionTimeoutTimer.setInterval(connectionTimeoutMsec);
+    connect(&m_connectionTimeoutTimer, &QTimer::timeout, this, &VpnConnection::onConnectionTimeout);
+#endif
 #if defined(Q_OS_IOS) || defined(MACOS_NE)
     m_checkTimer.setInterval(1000);
     connect(IosController::Instance(), &IosController::connectionStateChanged, this, &VpnConnection::setConnectionState);
@@ -368,7 +379,7 @@ void VpnConnection::connectToVpn(const QString &serverId, DockerContainer contai
     createProtocolConnections();
 
     if (ErrorCode err = m_vpnProtocol->start(); err != ErrorCode::NoError) {
-        setConnectionState(Vpn::ConnectionState::Error);
+        m_vpnProtocol->setLastError(err);
         emit vpnProtocolError(err);
     }
     logStage("protocol started");
@@ -382,8 +393,9 @@ void VpnConnection::createProtocolConnections()
 
 #ifdef AMNEZIA_DESKTOP
     IpcClient::withInterface([this](QSharedPointer<IpcInterfaceReplica> rep) {
-        connect(rep.data(), &IpcInterfaceReplica::networkChanged, this, &VpnConnection::reconnectToVpn, Qt::QueuedConnection);
-        connect(rep.data(), &IpcInterfaceReplica::wakeup, this, &VpnConnection::reconnectToVpn, Qt::QueuedConnection);
+        const auto connectionType = static_cast<Qt::ConnectionType>(Qt::QueuedConnection | Qt::UniqueConnection);
+        connect(rep.data(), &IpcInterfaceReplica::networkChanged, this, &VpnConnection::reconnectToVpn, connectionType);
+        connect(rep.data(), &IpcInterfaceReplica::wakeup, this, &VpnConnection::reconnectToVpn, connectionType);
     });
 #endif
 }
@@ -590,7 +602,7 @@ void VpnConnection::reconnectToVpn() {
     m_vpnProtocol->setAppSplitTunnelingConfig(m_vpnConfiguration);
     logStage("split tunneling config built");
     if (ErrorCode err = m_vpnProtocol->start(); err != ErrorCode::NoError) {
-        setConnectionState(Vpn::ConnectionState::Error);
+        m_vpnProtocol->setLastError(err);
         emit vpnProtocolError(err);
     }
     logStage("protocol started");
@@ -641,6 +653,17 @@ void VpnConnection::logStage(const QString &stage) const
     }
 }
 
+void VpnConnection::onConnectionTimeout()
+{
+    if (m_vpnProtocol.isNull()) {
+        return;
+    }
+
+    qWarning().noquote() << QString("Connection timeout after %1 ms").arg(connectionTimeoutMsec);
+    m_vpnProtocol->setLastError(ErrorCode::ConnectionTimeoutError);
+    m_vpnProtocol->stop();
+}
+
 void VpnConnection::setConnectionState(Vpn::ConnectionState state) {
     QElapsedTimer serviceCallsTimer;
     serviceCallsTimer.start();
@@ -651,6 +674,18 @@ void VpnConnection::setConnectionState(Vpn::ConnectionState state) {
 
     if (state == Vpn::Disconnected && m_connectionState == Vpn::Reconnecting)
         return;
+
+#ifdef AMNEZIA_DESKTOP
+    if (state == Vpn::ConnectionState::Connecting || state == Vpn::ConnectionState::Reconnecting) {
+        m_connectionTimeoutTimer.start();
+    } else {
+        m_connectionTimeoutTimer.stop();
+    }
+#endif
+
+    if (state == Vpn::ConnectionState::Error) {
+        emit lastErrorChanged(lastError());
+    }
 
     m_connectionState = state;
     emit connectionStateChanged(state);
