@@ -285,8 +285,10 @@ QString WindowsTunnelService::uapiCommand(const QString& command) {
 
 // static
 static bool waitForServiceStatus(SC_HANDLE service, DWORD expectedStatus) {
+  constexpr int pollIntervalMsec = 100;
+  constexpr int maxTries = 300;
   int tries = 0;
-  while (tries < 30) {
+  while (tries < maxTries) {
     SERVICE_STATUS status;
     if (!QueryServiceStatus(service, &status)) {
       WindowsUtils::windowsLog("Failed to retrieve the service status");
@@ -294,15 +296,17 @@ static bool waitForServiceStatus(SC_HANDLE service, DWORD expectedStatus) {
     }
 
     if (status.dwCurrentState == expectedStatus) {
+      logger.debug() << "The service reached the status in"
+                     << tries * pollIntervalMsec << "ms";
       return true;
     }
 
-    logger.warning() << "The service is not in the right status yet.";
-
-    Sleep(1000);
+    Sleep(pollIntervalMsec);
     ++tries;
   }
 
+  logger.warning() << "The service did not reach the status in"
+                   << maxTries * pollIntervalMsec << "ms";
   return false;
 }
 

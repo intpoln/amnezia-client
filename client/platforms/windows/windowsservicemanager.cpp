@@ -67,8 +67,9 @@ WindowsServiceManager::~WindowsServiceManager() {
 }
 
 bool WindowsServiceManager::startPolling(DWORD goal_state, int max_wait_sec) {
+  constexpr int pollIntervalMsec = 100;
   int tries = 0;
-  while (tries < max_wait_sec) {
+  while (tries < max_wait_sec * 1000 / pollIntervalMsec) {
     SERVICE_STATUS status;
     if (!QueryServiceStatus(m_service, &status)) {
       WindowsUtils::windowsLog("Failed to retrieve the service status");
@@ -85,11 +86,11 @@ bool WindowsServiceManager::startPolling(DWORD goal_state, int max_wait_sec) {
       return true;
     }
 
-    logger.debug() << "Polling Status" << m_state_target
-                   << "wanted, has: " << status.dwCurrentState;
-    Sleep(1000);
+    Sleep(pollIntervalMsec);
     ++tries;
   }
+  logger.debug() << "Polling Status" << m_state_target
+                 << "wanted, has not reached it in" << max_wait_sec << "s";
   return false;
 }
 
