@@ -40,7 +40,6 @@ public:
     bool clearSavedRoutes();
     int routeDeleteList(const QString &gw, const QStringList &ips);
     bool flushDns();
-    void resetIpStack();
 
     bool StartRoutingIpv6();
     bool StopRoutingIpv6();

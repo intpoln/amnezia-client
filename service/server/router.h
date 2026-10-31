@@ -20,7 +20,6 @@ public:
     static bool clearSavedRoutes();
     static int routeDeleteList(const QString &gw, const QStringList &ips);
     static bool flushDns();
-    static void resetIpStack();
     static bool createTun(const QString &dev, const QString &subnet);
     static bool deleteTun(const QString &dev);
     static bool StartRoutingIpv6();

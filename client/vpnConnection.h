@@ -100,6 +100,10 @@ private:
    void appendSplitTunnelingConfig();
    void appendAppSplitTunnelingConfig();
    void appendKillSwitchConfig();
+
+#ifdef AMNEZIA_DESKTOP
+   void requestDnsFlush(const QSharedPointer<IpcInterfaceReplica> &iface);
+#endif
 };
 
 #endif // VPNCONNECTION_H

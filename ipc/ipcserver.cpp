@@ -101,15 +101,6 @@ bool IpcServer::flushDns()
     return Router::flushDns();
 }
 
-void IpcServer::resetIpStack()
-{
-#ifdef MZ_DEBUG
-    qDebug() << "IpcServer::resetIpStack";
-#endif
-
-    Router::resetIpStack();
-}
-
 bool IpcServer::checkAndInstallDriver()
 {
 #ifdef MZ_DEBUG

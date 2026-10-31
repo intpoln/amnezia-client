@@ -278,35 +278,7 @@ int RouterWin::routeDeleteList(const QString &gw, const QStringList &ips)
 
 bool RouterWin::flushDns()
 {
-    QProcess p;
-    p.setProcessChannelMode(QProcess::MergedChannels);
-    QString command = QString("ipconfig /flushdns");
-
-    p.start(command);
-    p.waitForFinished();
-    return true;
-    //qDebug().noquote() << "OUTPUT ipconfig /flushdns: " + p.readAll();
-}
-
-void RouterWin::resetIpStack()
-{
-//    {
-//        QProcess p;
-//        QString command = QString("ipconfig /release");
-//        p.start(command);
-//    }
-    {
-        QProcess p;
-        QString command = QString("netsh int ip reset");
-        p.start(command);
-        p.waitForFinished();
-    }
-    {
-        QProcess p;
-        QString command = QString("netsh winsock reset");
-        p.start(command);
-        p.waitForFinished();
-    }
+    return QProcess::startDetached("ipconfig", { "/flushdns" });
 }
 
 bool RouterWin::createTun(const QString &dev, const QString &subnet)

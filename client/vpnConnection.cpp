@@ -125,13 +125,7 @@ void VpnConnection::onConnectionStateChanged(Vpn::ConnectionState state)
     IpcClient::withInterface([&](QSharedPointer<IpcInterfaceReplica> iface) {
         switch (state) {
             case Vpn::ConnectionState::Connected: {
-                iface->resetIpStack();
-
-                auto flushDns = iface->flushDns();
-                if (flushDns.waitForFinished() && flushDns.returnValue())
-                    qDebug() << "VpnConnection::onConnectionStateChanged: Successfully flushed DNS";
-                else
-                    qWarning() << "VpnConnection::onConnectionStateChanged: Failed to flush DNS";
+                requestDnsFlush(iface);
 
                 if (!ContainerUtils::isAwgContainer(container) && container != DockerContainer::WireGuard) {
                     QString dns1 = m_vpnConfiguration.value(configKey::dns1).toString();
@@ -166,11 +160,7 @@ void VpnConnection::onConnectionStateChanged(Vpn::ConnectionState state)
             } break;
             case Vpn::ConnectionState::Disconnected:
             case Vpn::ConnectionState::Error: {
-                auto flushDns = iface->flushDns();
-                if (flushDns.waitForFinished() && flushDns.returnValue())
-                    qDebug() << "VpnConnection::onConnectionStateChanged: Successfully flushed DNS";
-                else
-                    qWarning() << "VpnConnection::onConnectionStateChanged: Failed to flush DNS";
+                requestDnsFlush(iface);
 
                 auto clearSavedRoutes = iface->clearSavedRoutes();
                 if (clearSavedRoutes.waitForFinished() && clearSavedRoutes.returnValue())
@@ -194,6 +184,19 @@ void VpnConnection::onConnectionStateChanged(Vpn::ConnectionState state)
     }
 #endif
 }
+
+#ifdef AMNEZIA_DESKTOP
+void VpnConnection::requestDnsFlush(const QSharedPointer<IpcInterfaceReplica> &iface)
+{
+    auto *watcher = new QRemoteObjectPendingCallWatcher(iface->flushDns(), this);
+    connect(watcher, &QRemoteObjectPendingCallWatcher::finished, this, [](QRemoteObjectPendingCallWatcher *call) {
+        if (call->error() != QRemoteObjectPendingCall::NoError || !call->returnValue().toBool()) {
+            qWarning() << "VpnConnection: Failed to flush DNS";
+        }
+        call->deleteLater();
+    });
+}
+#endif
 
 const QString &VpnConnection::remoteAddress() const
 {
@@ -274,18 +277,7 @@ void VpnConnection::addSitesRoutes(const QString &gw, amnezia::RouteMode mode)
 
             // Async flush: never waitForFinished() here — that re-enters the event loop and
             // can re-enter this QHostInfo callback until the stack overflows (0xc00000fd).
-            IpcClient::withInterface([this](QSharedPointer<IpcInterfaceReplica> iface) {
-                QRemoteObjectPendingReply<bool> reply = iface->flushDns();
-                auto *watcher = new QRemoteObjectPendingCallWatcher(reply, this);
-                QObject::connect(watcher, &QRemoteObjectPendingCallWatcher::finished, this,
-                        [](QRemoteObjectPendingCallWatcher *call) {
-                            if (call->error() != QRemoteObjectPendingCall::NoError
-                                || !call->returnValue().toBool()) {
-                                qWarning() << "VpnConnection::addSitesRoutes: Failed to flush DNS";
-                            }
-                            call->deleteLater();
-                        });
-            });
+            IpcClient::withInterface([this](QSharedPointer<IpcInterfaceReplica> iface) { requestDnsFlush(iface); });
         };
         QHostInfo::lookupHost(site, this, cbResolv);
     }
