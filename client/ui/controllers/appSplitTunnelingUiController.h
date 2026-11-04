@@ -34,6 +34,9 @@ public slots:
     void addApps(QVector<QPair<QString, QString>> apps);
     void addFolder(const QUrl &folderUrl);
     void addAppFolders(const QStringList &appPaths);
+    QStringList appFolders(const QStringList &appPaths) const;
+    QStringList folderExecutables(const QString &folderPath) const;
+    bool isFolderScanning(const QString &folderPath) const;
     void scanFolders();
     void removeApp(const int index);
     void toggleSplitTunneling(bool enabled);
@@ -51,6 +54,7 @@ signals:
     void routeModeChanged();
     void isSplitTunnelingEnabledChanged();
     void exclusionsChanged();
+    void folderScanned();
     void errorOccurred(const QString &errorMessage);
     void finished(const QString &message);
 
@@ -61,6 +65,7 @@ private:
     AppSplitTunnelingController* m_appSplitTunnelingController;
     AppSplitTunnelingModel* m_appSplitTunnelingModel;
     QSet<QString> m_scanningFolders;
+    QHash<QString, QStringList> m_folderExecutables;
 };
 
 #endif // APPSPLITTUNNELINGUICONTROLLER_H

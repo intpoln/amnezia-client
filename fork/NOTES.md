@@ -38,7 +38,9 @@
   - запущенные программы: `core/utils/runningApps.cpp` (Toolhelp32 + `QueryFullProcessImageNameW`, без `%SystemRoot%` и папки самого клиента), модель `RunningAppsModel`, шторка `Components/RunningAppsDrawer.qml`;
   - `GC.escapeRegExp` экранирует текст поиска для `RegExpFilter` (пути с `\` и скобками);
   - ошибки с действием: `PageController::showErrorMessageWithAction(message, actionText, actionId)`, действия `retry` и `openLogs` обрабатывает `popupErrorMessage` в `main2.qml`. Ошибка с действием закрывается, когда VPN подключился;
-  - кнопки шторки запущенных программ активны только при выборе (`RunningAppsModel::selectedCount`).
+  - кнопки шторки запущенных программ активны только при выборе (`RunningAppsModel::selectedCount`). «Добавить их папки» сначала показывает список папок (`AppSplitTunnelingUiController::appFolders`), выбор при отмене сохраняется;
+  - ручное переподключение: `reconnect()` (исключения, сбой исключений) и `switchConnection()` (смена сервера в `ServersListView.qml`, страны в `PageStart.qml`) ставят цель `ReconnectPurpose`. Пока она есть, в `Disconnecting`/`Preparing`/`Connecting` кнопка пишет «Переподключение...» или «Переключение...». Цель сбрасывается на `Connected`/`Error`/`Unknown`, на `Disconnected` без ожидающего продолжения, в `closeConnection()` и `notifyConnectionBlocked()`;
+  - список `.exe` папки: результаты сканирования кэшируются в `AppSplitTunnelingUiController::m_folderExecutables` (ключ как в `getFolders()`, через `QDir::cleanPath`), сигнал `folderScanned`. Шторка `Components/FolderExecutablesDrawer.qml` открывается кликом по строке папки, удаление папки теперь из этой шторки; приложения удаляются кликом по строке, как раньше.
 - **Тесты:** `client/tests/testUiAppSTModelAndController.cpp`.
 
 ## Драйвер Mullvad: что важно знать

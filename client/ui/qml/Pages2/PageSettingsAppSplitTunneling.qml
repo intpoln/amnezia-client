@@ -68,6 +68,11 @@ PageType {
         return qsTr("Folder: %1").arg(path)
     }
 
+    function askRemoveExclusion(name, sourceIndex) {
+        Dialogs.askQuestion(qsTr("Remove %1 from exclusions?").arg(name), "", qsTr("Remove exclusion"), qsTr("Cancel"),
+                            function() { AppSplitTunnelingController.removeApp(sourceIndex) }, function() {})
+    }
+
     ListViewType {
         id: listView
 
@@ -280,20 +285,18 @@ PageType {
 
                 text: appPath
                 subtitle: isFolder ? root.folderSubtitle(fullPath, executablesCount) : fullPath
-                trailingIconSource: "qrc:/images/controls/trash.svg"
+                trailingIconSource: isFolder ? "qrc:/images/controls/chevron-right.svg" : "qrc:/images/controls/trash.svg"
 
                 onClicked: {
-                    var headerText = qsTr("Remove %1 from exclusions?").arg(appPath)
-                    var yesButtonText = qsTr("Remove exclusion")
-                    var noButtonText = qsTr("Cancel")
-
-                    var yesButtonFunction = function() {
-                        AppSplitTunnelingController.removeApp(proxyAppSplitTunnelingModel.mapToSource(index))
+                    const sourceIndex = proxyAppSplitTunnelingModel.mapToSource(index)
+                    if (isFolder) {
+                        folderExecutablesDrawer.folderName = appPath
+                        folderExecutablesDrawer.folderPath = fullPath
+                        folderExecutablesDrawer.sourceIndex = sourceIndex
+                        folderExecutablesDrawer.open()
+                    } else {
+                        root.askRemoveExclusion(appPath, sourceIndex)
                     }
-                    var noButtonFunction = function() {
-                    }
-
-                    Dialogs.askQuestion(headerText, "", yesButtonText, noButtonText, yesButtonFunction, noButtonFunction)
                 }
             }
         }
@@ -360,6 +363,17 @@ PageType {
 
     RunningAppsDrawer {
         id: runningAppsDrawer
+    }
+
+    FolderExecutablesDrawer {
+        id: folderExecutablesDrawer
+
+        property int sourceIndex: -1
+
+        onRemoveRequested: {
+            close()
+            root.askRemoveExclusion(folderName, sourceIndex)
+        }
     }
 
     FileDialog {

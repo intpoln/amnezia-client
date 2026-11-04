@@ -46,10 +46,21 @@ void ConnectionUiController::openConnection()
 void ConnectionUiController::closeConnection()
 {
     m_isReconnectRequested = false;
+    m_reconnectPurpose = ReconnectPurpose::None;
     m_connectionController->closeConnection();
 }
 
 void ConnectionUiController::reconnect()
+{
+    requestReconnect(ReconnectPurpose::Reconnect);
+}
+
+void ConnectionUiController::switchConnection()
+{
+    requestReconnect(ReconnectPurpose::Switch);
+}
+
+void ConnectionUiController::requestReconnect(ReconnectPurpose purpose)
 {
     if (m_state == Vpn::ConnectionState::Preparing) {
         emit preparingConfig();
@@ -63,6 +74,28 @@ void ConnectionUiController::reconnect()
 
     closeConnection();
     m_isReconnectRequested = true;
+    m_reconnectPurpose = purpose;
+
+    const QString stateText = reconnectStateText();
+    if (!stateText.isEmpty()) {
+        m_connectionStateText = stateText;
+        emit connectionStateChanged();
+    }
+}
+
+QString ConnectionUiController::reconnectStateText() const
+{
+    if (m_state != Vpn::ConnectionState::Disconnecting && m_state != Vpn::ConnectionState::Preparing
+        && m_state != Vpn::ConnectionState::Connecting) {
+        return {};
+    }
+
+    switch (m_reconnectPurpose) {
+    case ReconnectPurpose::Reconnect: return tr("Reconnecting...");
+    case ReconnectPurpose::Switch: return tr("Switching...");
+    case ReconnectPurpose::None: break;
+    }
+    return {};
 }
 
 void ConnectionUiController::retryConnection()
@@ -159,6 +192,12 @@ void ConnectionUiController::onConnectionStateChanged(Vpn::ConnectionState state
         }
     }
 
+    if (state == Vpn::ConnectionState::Connected || state == Vpn::ConnectionState::Error
+        || state == Vpn::ConnectionState::Unknown
+        || (state == Vpn::ConnectionState::Disconnected && !m_isReconnectRequested)) {
+        m_reconnectPurpose = ReconnectPurpose::None;
+    }
+
     m_isConnected = false;
     m_connectionStateText = tr("Connecting...");
     switch (state) {
@@ -206,6 +245,11 @@ void ConnectionUiController::onConnectionStateChanged(Vpn::ConnectionState state
         emit connectionErrorOccurred(getLastConnectionError());
         break;
     }
+    }
+
+    const QString reconnectText = reconnectStateText();
+    if (!reconnectText.isEmpty()) {
+        m_connectionStateText = reconnectText;
     }
     emit connectionStateChanged();
 }
@@ -259,6 +303,8 @@ void ConnectionUiController::startConnection()
 
 void ConnectionUiController::notifyConnectionBlocked(ErrorCode errorCode)
 {
+    m_reconnectPurpose = ReconnectPurpose::None;
+
     if (errorCode == ErrorCode::LegacyApiV1NotSupportedError) {
         emit unsupportedConnectDrawerRequested();
         return;

@@ -91,17 +91,35 @@ void AppSplitTunnelingUiController::addFolder(const QUrl &folderUrl)
 
 void AppSplitTunnelingUiController::addAppFolders(const QStringList &appPaths)
 {
+    for (const auto &folderPath : appFolders(appPaths)) {
+        addFolderPath(QDir::fromNativeSeparators(folderPath));
+    }
+}
+
+QStringList AppSplitTunnelingUiController::appFolders(const QStringList &appPaths) const
+{
     QStringList folderPaths;
     for (const auto &appPath : appPaths) {
-        const QString folderPath = QFileInfo(appPath).absolutePath();
+        const QString folderPath = QDir::toNativeSeparators(QFileInfo(appPath).absolutePath());
         if (!folderPaths.contains(folderPath, Qt::CaseInsensitive)) {
             folderPaths.append(folderPath);
         }
     }
+    return folderPaths;
+}
 
-    for (const auto &folderPath : std::as_const(folderPaths)) {
-        addFolderPath(folderPath);
+QStringList AppSplitTunnelingUiController::folderExecutables(const QString &folderPath) const
+{
+    QStringList executables;
+    for (const auto &path : m_folderExecutables.value(QDir::cleanPath(QDir::fromNativeSeparators(folderPath)))) {
+        executables.append(QDir::toNativeSeparators(path));
     }
+    return executables;
+}
+
+bool AppSplitTunnelingUiController::isFolderScanning(const QString &folderPath) const
+{
+    return m_scanningFolders.contains(QDir::cleanPath(QDir::fromNativeSeparators(folderPath)));
 }
 
 void AppSplitTunnelingUiController::scanFolders()
@@ -137,11 +155,16 @@ void AppSplitTunnelingUiController::scanFolder(const QString &folderPath, bool r
 
     auto watcher = new QFutureWatcher<QStringList>(this);
     connect(watcher, &QFutureWatcher<QStringList>::finished, this, [this, watcher, folderPath, reportResult]() {
-        const int executablesCount = watcher->result().size();
+        const QStringList executables = watcher->result();
+        const int executablesCount = executables.size();
         watcher->deleteLater();
         m_scanningFolders.remove(folderPath);
+        if (m_appSplitTunnelingController->getFolders().contains(folderPath)) {
+            m_folderExecutables.insert(folderPath, executables);
+        }
 
         m_appSplitTunnelingModel->setFolderExecutablesCount(folderPath, executablesCount);
+        emit folderScanned();
         if (!reportResult) {
             return;
         }
@@ -170,6 +193,7 @@ void AppSplitTunnelingUiController::removeApp(const int index)
     if (index >= appsCount) {
         auto folderPath =
                 m_appSplitTunnelingModel->data(modelIndex, AppSplitTunnelingModel::Roles::FullPathRole).toString();
+        m_folderExecutables.remove(m_appSplitTunnelingController->getFolders().value(index - appsCount));
         m_appSplitTunnelingController->removeFolder(index - appsCount);
         emit finished(tr("Folder removed: %1").arg(folderPath));
         return;

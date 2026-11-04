@@ -196,6 +196,11 @@
         <translation>Переподключение...</translation>
     </message>
     <message>
+        <location filename="../ui/controllers/connectionUiController.cpp" line="1"/>
+        <source>Switching...</source>
+        <translation>Переключение...</translation>
+    </message>
+    <message>
         <location filename="../ui/controllers/connectionUiController.cpp" line="80"/>
         <location filename="../ui/controllers/connectionUiController.cpp" line="95"/>
         <location filename="../ui/controllers/connectionUiController.cpp" line="101"/>
@@ -558,6 +563,41 @@
         <location filename="../ui/qml/Components/HomeServerSummary.qml" line="91"/>
         <source>AmneziaWG 2.0 is outdated and no longer supported. Continued use requires a fresh installation of the AmneziaWG 3.1 container.</source>
         <translation>AmneziaWG 2.0 устарел и больше не поддерживается. Для дальнейшего использования требуется новая установка контейнера AmneziaWG 3.1.</translation>
+    </message>
+</context>
+<context>
+    <name>FolderExecutablesDrawer</name>
+    <message>
+        <location filename="../ui/qml/Components/FolderExecutablesDrawer.qml" line="1"/>
+        <source>%1
+.exe files that bypass the VPN: %2</source>
+        <translation>%1
+Файлов .exe в обход VPN: %2</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Components/FolderExecutablesDrawer.qml" line="1"/>
+        <source>Nothing found</source>
+        <translation>Ничего не найдено</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Components/FolderExecutablesDrawer.qml" line="1"/>
+        <source>Searching for .exe files…</source>
+        <translation>Поиск .exe файлов…</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Components/FolderExecutablesDrawer.qml" line="1"/>
+        <source>No .exe files in this folder</source>
+        <translation>В папке нет .exe файлов</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Components/FolderExecutablesDrawer.qml" line="1"/>
+        <source>file name or path</source>
+        <translation>имя или путь файла</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Components/FolderExecutablesDrawer.qml" line="1"/>
+        <source>Remove from exclusions</source>
+        <translation>Удалить из исключений</translation>
     </message>
 </context>
 <context>
@@ -7977,6 +8017,26 @@ What can help:
         <location filename="../ui/qml/Components/RunningAppsDrawer.qml" line="1"/>
         <source>Add their folders</source>
         <translation>Добавить их папки</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Components/RunningAppsDrawer.qml" line="1"/>
+        <source>Add these folders to exclusions?</source>
+        <translation>Добавить эти папки в исключения?</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Components/RunningAppsDrawer.qml" line="1"/>
+        <source>All .exe files in these folders and their subfolders will bypass the VPN:</source>
+        <translation>Все .exe файлы в этих папках и их подпапках будут работать в обход VPN:</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Components/RunningAppsDrawer.qml" line="1"/>
+        <source>Add</source>
+        <translation>Добавить</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Components/RunningAppsDrawer.qml" line="1"/>
+        <source>Cancel</source>
+        <translation>Отмена</translation>
     </message>
 </context>
 <context>

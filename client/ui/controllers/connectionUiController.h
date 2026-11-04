@@ -39,6 +39,7 @@ public slots:
     void openConnection();
     void closeConnection();
     void reconnect();
+    void switchConnection();
     void retryConnection();
 
     bool isRevokeBlockedDuringActiveConnection(const QString &serverId, int containerIndex, const QString &clientId) const;
@@ -64,7 +65,15 @@ signals:
     void noInstalledContainers();
 
 private:
+    enum class ReconnectPurpose {
+        None,
+        Reconnect,
+        Switch
+    };
+
     Vpn::ConnectionState getCurrentConnectionState();
+    void requestReconnect(ReconnectPurpose purpose);
+    QString reconnectStateText() const;
     void notifyConnectionBlocked(ErrorCode errorCode);
     void setReconnectNeeded(bool isReconnectNeeded);
     void setSplitTunnelFailed(bool isSplitTunnelFailed);
@@ -78,6 +87,7 @@ private:
     bool m_isConnected = false;
     bool m_isConnectionInProgress = false;
     bool m_isReconnectRequested = false;
+    ReconnectPurpose m_reconnectPurpose = ReconnectPurpose::None;
     bool m_isReconnectNeeded = false;
     bool m_isSplitTunnelFailed = false;
     bool m_isSplitTunnelFailureNotificationPending = false;

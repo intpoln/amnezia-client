@@ -46,15 +46,12 @@ void RunningAppsModel::selectedStateChanged(const int index, const bool selected
     emit selectedCountChanged();
 }
 
-QStringList RunningAppsModel::getSelectedAppPaths()
+QStringList RunningAppsModel::getSelectedAppPaths() const
 {
     QStringList appPaths;
     for (const int i : std::as_const(m_selectedAppIndexes)) {
         appPaths.append(m_appPaths.at(i));
     }
-
-    m_selectedAppIndexes.clear();
-    emit selectedCountChanged();
     return appPaths;
 }
 

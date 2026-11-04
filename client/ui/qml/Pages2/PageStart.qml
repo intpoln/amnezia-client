@@ -253,7 +253,7 @@ PageType {
             PageController.goToPageHome()
             PageController.showNotificationMessage(message)
             if (isActiveServerChanged) {
-                ConnectionController.reconnect()
+                ConnectionController.switchConnection()
             }
         }
 

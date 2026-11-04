@@ -74,7 +74,7 @@ ListViewType {
                                 qsTr("Switch"), qsTr("Cancel"),
                                 function() {
                                     ServersUiController.setDefaultServerAtIndex(serverIndex)
-                                    ConnectionController.reconnect()
+                                    ConnectionController.switchConnection()
                                 }, function() {})
         }
 

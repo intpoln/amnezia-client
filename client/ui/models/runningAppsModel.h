@@ -27,7 +27,7 @@ public:
 
 public slots:
     void selectedStateChanged(const int index, const bool selected);
-    QStringList getSelectedAppPaths();
+    QStringList getSelectedAppPaths() const;
 
     void updateModel();
 

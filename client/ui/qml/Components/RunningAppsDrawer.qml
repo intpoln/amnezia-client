@@ -151,8 +151,16 @@ SheetType {
             text: qsTr("Add their folders")
 
             onClicked: {
-                AppSplitTunnelingController.addAppFolders(runningAppsModel.getSelectedAppPaths())
-                root.close()
+                const appPaths = runningAppsModel.getSelectedAppPaths()
+                const folderPaths = AppSplitTunnelingController.appFolders(appPaths)
+                Dialogs.askQuestion(qsTr("Add these folders to exclusions?"),
+                                    qsTr("All .exe files in these folders and their subfolders will bypass the VPN:")
+                                    + "\n" + folderPaths.join("\n"),
+                                    qsTr("Add"), qsTr("Cancel"),
+                                    function() {
+                                        AppSplitTunnelingController.addAppFolders(appPaths)
+                                        root.close()
+                                    }, function() {})
             }
         }
     }
