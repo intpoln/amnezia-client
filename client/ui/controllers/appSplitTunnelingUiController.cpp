@@ -107,8 +107,7 @@ void AppSplitTunnelingUiController::addAppFolders(const QStringList &appPaths)
 void AppSplitTunnelingUiController::scanFolders()
 {
     for (const auto &folderPath : m_appSplitTunnelingController->getFolders()) {
-        if (m_appSplitTunnelingModel->folderExecutablesCount(folderPath)
-            == AppSplitTunnelingModel::executablesCountUnknown) {
+        if (!m_scanningFolders.contains(folderPath)) {
             scanFolder(folderPath, false);
         }
     }
@@ -130,12 +129,17 @@ void AppSplitTunnelingUiController::addFolderPath(const QString &folderPath)
 
 void AppSplitTunnelingUiController::scanFolder(const QString &folderPath, bool reportResult)
 {
-    m_appSplitTunnelingModel->setFolderExecutablesCount(folderPath, AppSplitTunnelingModel::executablesCountSearching);
+    m_scanningFolders.insert(folderPath);
+    if (m_appSplitTunnelingModel->folderExecutablesCount(folderPath) < 0) {
+        m_appSplitTunnelingModel->setFolderExecutablesCount(folderPath,
+                                                            AppSplitTunnelingModel::executablesCountSearching);
+    }
 
     auto watcher = new QFutureWatcher<QStringList>(this);
     connect(watcher, &QFutureWatcher<QStringList>::finished, this, [this, watcher, folderPath, reportResult]() {
         const int executablesCount = watcher->result().size();
         watcher->deleteLater();
+        m_scanningFolders.remove(folderPath);
 
         m_appSplitTunnelingModel->setFolderExecutablesCount(folderPath, executablesCount);
         if (!reportResult) {

@@ -127,6 +127,7 @@ SheetType {
             anchors.rightMargin: 16
             anchors.leftMargin: 16
 
+            enabled: runningAppsModel.selectedCount > 0
             text: qsTr("Add selected")
 
             onClicked: {
@@ -145,6 +146,7 @@ SheetType {
             anchors.rightMargin: 16
             anchors.leftMargin: 16
 
+            enabled: runningAppsModel.selectedCount > 0
             variant: ButtonType.Secondary
             text: qsTr("Add their folders")
 

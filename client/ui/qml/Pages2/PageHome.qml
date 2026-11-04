@@ -192,9 +192,17 @@ PageType {
 
                 visible: Qt.platform.os === "windows"
 
-                text: AppSplitTunnelingController.isSplitTunnelingEnabled
-                      ? qsTr("Exclusions: apps %1, folders %2").arg(AppSplitTunnelingController.appsCount).arg(AppSplitTunnelingController.foldersCount)
-                      : qsTr("App and folder exclusions are off")
+                text: {
+                    if (ConnectionController.isSplitTunnelFailed) {
+                        return qsTr("Exclusions are not working, reconnect the VPN")
+                    }
+                    if (ConnectionController.isReconnectNeeded) {
+                        return qsTr("Exclusion changes will apply after reconnecting")
+                    }
+                    return AppSplitTunnelingController.isSplitTunnelingEnabled
+                            ? qsTr("Exclusions: apps %1, folders %2").arg(AppSplitTunnelingController.appsCount).arg(AppSplitTunnelingController.foldersCount)
+                            : qsTr("App and folder exclusions are off")
+                }
 
                 leftImageSource: "qrc:/images/controls/app.svg"
                 rightImageSource: "qrc:/images/controls/chevron-right.svg"

@@ -6,6 +6,8 @@
 #include <QFileInfo>
 #include <QSet>
 
+#include <vector>
+
 #ifdef Q_OS_WIN
     #include <windows.h>
 #endif
@@ -34,16 +36,21 @@ namespace
                                     FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING,
                                     FILE_FLAG_BACKUP_SEMANTICS, nullptr);
         if (handle != INVALID_HANDLE_VALUE) {
-            wchar_t buffer[MAX_PATH * 4];
-            const DWORD length =
-                    GetFinalPathNameByHandleW(handle, buffer, std::size(buffer), FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
+            constexpr DWORD flags = FILE_NAME_NORMALIZED | VOLUME_NAME_DOS;
+            std::vector<wchar_t> buffer(MAX_PATH);
+            DWORD length = GetFinalPathNameByHandleW(handle, buffer.data(), DWORD(buffer.size()), flags);
+            if (length >= buffer.size()) {
+                buffer.resize(length);
+                length = GetFinalPathNameByHandleW(handle, buffer.data(), DWORD(buffer.size()), flags);
+            }
             CloseHandle(handle);
 
-            const QString finalPath = QString::fromWCharArray(buffer, length);
-            const QLatin1String localPrefix("\\\\?\\");
-            if (length > 0 && length < std::size(buffer) && finalPath.startsWith(localPrefix)
-                && !finalPath.startsWith(QLatin1String("\\\\?\\UNC\\"))) {
-                return QDir::cleanPath(QDir::fromNativeSeparators(finalPath.mid(localPrefix.size())));
+            if (length > 0 && length < buffer.size()) {
+                const QString finalPath = QString::fromWCharArray(buffer.data(), length);
+                const QLatin1String localPrefix("\\\\?\\");
+                if (finalPath.startsWith(localPrefix) && !finalPath.startsWith(QLatin1String("\\\\?\\UNC\\"))) {
+                    return QDir::cleanPath(QDir::fromNativeSeparators(finalPath.mid(localPrefix.size())));
+                }
             }
         }
 #endif

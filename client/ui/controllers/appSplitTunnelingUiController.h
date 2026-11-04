@@ -2,6 +2,7 @@
 #define APPSPLITTUNNELINGUICONTROLLER_H
 
 #include <QObject>
+#include <QSet>
 #include <QUrl>
 #include <QVector>
 
@@ -59,6 +60,7 @@ private:
 
     AppSplitTunnelingController* m_appSplitTunnelingController;
     AppSplitTunnelingModel* m_appSplitTunnelingModel;
+    QSet<QString> m_scanningFolders;
 };
 
 #endif // APPSPLITTUNNELINGUICONTROLLER_H

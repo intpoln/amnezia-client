@@ -31,6 +31,11 @@ QVariant RunningAppsModel::data(const QModelIndex &index, int role) const
     return QVariant();
 }
 
+int RunningAppsModel::selectedCount() const
+{
+    return m_selectedAppIndexes.size();
+}
+
 void RunningAppsModel::selectedStateChanged(const int index, const bool selected)
 {
     if (selected) {
@@ -38,6 +43,7 @@ void RunningAppsModel::selectedStateChanged(const int index, const bool selected
     } else {
         m_selectedAppIndexes.remove(index);
     }
+    emit selectedCountChanged();
 }
 
 QStringList RunningAppsModel::getSelectedAppPaths()
@@ -48,6 +54,7 @@ QStringList RunningAppsModel::getSelectedAppPaths()
     }
 
     m_selectedAppIndexes.clear();
+    emit selectedCountChanged();
     return appPaths;
 }
 
@@ -62,6 +69,7 @@ void RunningAppsModel::updateModel()
     m_appPaths = appPaths;
     m_selectedAppIndexes.clear();
     endResetModel();
+    emit selectedCountChanged();
 }
 
 QHash<int, QByteArray> RunningAppsModel::roleNames() const

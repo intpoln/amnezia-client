@@ -83,6 +83,7 @@ Window  {
         }
 
         function onShowErrorMessage(errorMessage) {
+            popupErrorMessage.actionId = ""
             popupErrorMessage.show(errorMessage)
         }
 
@@ -146,9 +147,7 @@ Window  {
 
         onActionTriggered: {
             if (actionId === "retry") {
-                if (!ConnectionController.isConnected && !ConnectionController.isConnectionInProgress) {
-                    ConnectionController.connectButtonClicked()
-                }
+                ConnectionController.retryConnection()
             } else if (actionId === "openLogs") {
                 PageController.goToPage(PageEnum.PageSettingsLogging)
             }
@@ -325,9 +324,15 @@ Window  {
     Connections {
         target: ConnectionController
 
+        function onConnectionStateChanged() {
+            if (ConnectionController.isConnected && popupErrorMessage.actionId !== "") {
+                popupErrorMessage.close()
+            }
+        }
+
         function onSplitTunnelFailed() {
             root.showQuestionDrawer(qsTr("App exclusions were not applied"),
-                                    qsTr("The VPN is connected, but all apps, including the excluded ones, now go through the VPN.\n\nWhat can help:\n• Reconnect the VPN.\n• Check that the excluded apps and folders still exist.\n• Restart the computer: the split tunneling driver may have failed to start.\n• If nothing helps, save the logs in Settings → Logs and send them to support."),
+                                    qsTr("The VPN is connected, but the excluded apps and folders now go through the VPN too.\n\nWhat can help:\n• Reconnect the VPN.\n• Check that the excluded apps and folders still exist.\n• Restart the computer: the split tunneling driver may have failed to start.\n• If nothing helps, save the logs in Settings → Logs and send them to support."),
                                     qsTr("Reconnect"), qsTr("Close"),
                                     function() { ConnectionController.reconnect() }, null)
         }

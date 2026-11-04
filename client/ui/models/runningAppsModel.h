@@ -8,6 +8,7 @@
 class RunningAppsModel : public QAbstractListModel
 {
     Q_OBJECT
+    Q_PROPERTY(int selectedCount READ selectedCount NOTIFY selectedCountChanged)
 
 public:
     enum Roles {
@@ -22,11 +23,16 @@ public:
 
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 
+    int selectedCount() const;
+
 public slots:
     void selectedStateChanged(const int index, const bool selected);
     QStringList getSelectedAppPaths();
 
     void updateModel();
+
+signals:
+    void selectedCountChanged();
 
 protected:
     QHash<int, QByteArray> roleNames() const override;

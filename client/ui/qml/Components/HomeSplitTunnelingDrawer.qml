@@ -77,7 +77,15 @@ SheetType {
             Layout.rightMargin: 16
 
             text: Qt.platform.os === "windows" ? qsTr("App and folder exclusions") : qsTr("App-based split tunneling")
-            subtitle: AppSplitTunnelingController.isSplitTunnelingEnabled ? qsTr("Enabled") : qsTr("Disabled")
+            subtitle: {
+                if (ConnectionController.isSplitTunnelFailed) {
+                    return qsTr("Not working, reconnect the VPN")
+                }
+                if (ConnectionController.isReconnectNeeded) {
+                    return qsTr("Changes will apply after reconnecting")
+                }
+                return AppSplitTunnelingController.isSplitTunnelingEnabled ? qsTr("Enabled") : qsTr("Disabled")
+            }
             trailingIconSource: "qrc:/images/controls/chevron-right.svg"
 
             onClicked: {

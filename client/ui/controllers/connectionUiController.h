@@ -19,6 +19,7 @@ public:
     Q_PROPERTY(bool isConnectionInProgress READ isConnectionInProgress NOTIFY connectionStateChanged)
     Q_PROPERTY(QString connectionStateText READ connectionStateText NOTIFY connectionStateChanged)
     Q_PROPERTY(bool isReconnectNeeded READ isReconnectNeeded NOTIFY isReconnectNeededChanged)
+    Q_PROPERTY(bool isSplitTunnelFailed READ isSplitTunnelFailed NOTIFY isSplitTunnelFailedChanged)
 
     explicit ConnectionUiController(ConnectionController* connectionController,
                                     ServersController* serversController,
@@ -30,6 +31,7 @@ public:
     bool isConnectionInProgress() const;
     QString connectionStateText() const;
     bool isReconnectNeeded() const;
+    bool isSplitTunnelFailed() const;
 
 public slots:
     void toggleConnection();
@@ -37,6 +39,7 @@ public slots:
     void openConnection();
     void closeConnection();
     void reconnect();
+    void retryConnection();
 
     bool isRevokeBlockedDuringActiveConnection(const QString &serverId, int containerIndex, const QString &clientId) const;
 
@@ -49,6 +52,7 @@ public slots:
 signals:
     void connectionStateChanged();
     void isReconnectNeededChanged();
+    void isSplitTunnelFailedChanged();
 
     void connectionErrorOccurred(ErrorCode errorCode);
     void splitTunnelFailed();
@@ -63,6 +67,10 @@ private:
     Vpn::ConnectionState getCurrentConnectionState();
     void notifyConnectionBlocked(ErrorCode errorCode);
     void setReconnectNeeded(bool isReconnectNeeded);
+    void setSplitTunnelFailed(bool isSplitTunnelFailed);
+    void onSplitTunnelFailed();
+    void startConnection();
+    void continueReconnect();
 
     ConnectionController* m_connectionController;
     ServersController* m_serversController;
@@ -71,6 +79,8 @@ private:
     bool m_isConnectionInProgress = false;
     bool m_isReconnectRequested = false;
     bool m_isReconnectNeeded = false;
+    bool m_isSplitTunnelFailed = false;
+    bool m_isSplitTunnelFailureNotificationPending = false;
     QString m_connectionStateText = tr("Connect");
 
     Vpn::ConnectionState m_state;

@@ -19,7 +19,8 @@ ConnectionUiController::ConnectionUiController(ConnectionController* connectionC
       m_serversController(serversController)
 {
     connect(m_connectionController, &ConnectionController::connectionStateChanged, this, &ConnectionUiController::onConnectionStateChanged);
-    connect(m_connectionController, &ConnectionController::splitTunnelFailed, this, &ConnectionUiController::splitTunnelFailed);
+    connect(m_connectionController, &ConnectionController::splitTunnelFailed, this,
+            &ConnectionUiController::onSplitTunnelFailed);
 
     connect(this, &ConnectionUiController::connectButtonClicked, this, &ConnectionUiController::toggleConnection, Qt::QueuedConnection);
 
@@ -64,6 +65,25 @@ void ConnectionUiController::reconnect()
     m_isReconnectRequested = true;
 }
 
+void ConnectionUiController::retryConnection()
+{
+    if (m_state == Vpn::ConnectionState::Preparing || isConnected() || isConnectionInProgress()) {
+        return;
+    }
+
+    startConnection();
+}
+
+void ConnectionUiController::continueReconnect()
+{
+    if (!m_isReconnectRequested) {
+        return;
+    }
+
+    m_isReconnectRequested = false;
+    retryConnection();
+}
+
 bool ConnectionUiController::isReconnectNeeded() const
 {
     return m_isReconnectNeeded;
@@ -84,6 +104,29 @@ void ConnectionUiController::setReconnectNeeded(bool isReconnectNeeded)
     }
 }
 
+bool ConnectionUiController::isSplitTunnelFailed() const
+{
+    return m_isSplitTunnelFailed;
+}
+
+void ConnectionUiController::setSplitTunnelFailed(bool isSplitTunnelFailed)
+{
+    if (m_isSplitTunnelFailed != isSplitTunnelFailed) {
+        m_isSplitTunnelFailed = isSplitTunnelFailed;
+        emit isSplitTunnelFailedChanged();
+    }
+}
+
+void ConnectionUiController::onSplitTunnelFailed()
+{
+    setSplitTunnelFailed(true);
+    if (m_state == Vpn::ConnectionState::Connected) {
+        emit splitTunnelFailed();
+    } else {
+        m_isSplitTunnelFailureNotificationPending = true;
+    }
+}
+
 ErrorCode ConnectionUiController::getLastConnectionError()
 {
     return m_connectionController->lastConnectionError();
@@ -93,14 +136,26 @@ void ConnectionUiController::onConnectionStateChanged(Vpn::ConnectionState state
 {
     m_state = state;
 
-    if (state == Vpn::ConnectionState::Disconnected || state == Vpn::ConnectionState::Error) {
+    if (state == Vpn::ConnectionState::Disconnected || state == Vpn::ConnectionState::Error
+        || state == Vpn::ConnectionState::Reconnecting) {
         setReconnectNeeded(false);
     }
 
+    if (state == Vpn::ConnectionState::Connected) {
+        if (m_isSplitTunnelFailureNotificationPending) {
+            m_isSplitTunnelFailureNotificationPending = false;
+            emit splitTunnelFailed();
+        }
+    } else if (state != Vpn::ConnectionState::Connecting) {
+        m_isSplitTunnelFailureNotificationPending = false;
+        setSplitTunnelFailed(false);
+    }
+
     if (m_isReconnectRequested && (state == Vpn::ConnectionState::Disconnected || state == Vpn::ConnectionState::Error)) {
-        m_isReconnectRequested = false;
         if (state == Vpn::ConnectionState::Disconnected) {
-            QMetaObject::invokeMethod(this, &ConnectionUiController::toggleConnection, Qt::QueuedConnection);
+            QMetaObject::invokeMethod(this, &ConnectionUiController::continueReconnect, Qt::QueuedConnection);
+        } else {
+            m_isReconnectRequested = false;
         }
     }
 
@@ -182,19 +237,24 @@ void ConnectionUiController::toggleConnection()
     } else if (isConnected()) {
         closeConnection();
     } else {
-        const QString serverId = m_serversController->getDefaultServerId();
-        if (serverId.isEmpty()) {
-            return;
-        }
-
-        const ErrorCode errorCode = m_connectionController->isConnectionSupported(serverId);
-        if (errorCode != ErrorCode::NoError) {
-            notifyConnectionBlocked(errorCode);
-            return;
-        }
-
-        emit prepareConfig();
+        startConnection();
     }
+}
+
+void ConnectionUiController::startConnection()
+{
+    const QString serverId = m_serversController->getDefaultServerId();
+    if (serverId.isEmpty()) {
+        return;
+    }
+
+    const ErrorCode errorCode = m_connectionController->isConnectionSupported(serverId);
+    if (errorCode != ErrorCode::NoError) {
+        notifyConnectionBlocked(errorCode);
+        return;
+    }
+
+    emit prepareConfig();
 }
 
 void ConnectionUiController::notifyConnectionBlocked(ErrorCode errorCode)

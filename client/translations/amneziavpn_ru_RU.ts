@@ -603,6 +603,16 @@ Can&apos;t be disabled for current server</source>
         <translation>Отключено</translation>
     </message>
     <message>
+        <location filename="../ui/qml/Components/HomeSplitTunnelingDrawer.qml" line="1"/>
+        <source>Not working, reconnect the VPN</source>
+        <translation>Не работают, переподключите VPN</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Components/HomeSplitTunnelingDrawer.qml" line="1"/>
+        <source>Changes will apply after reconnecting</source>
+        <translation>Изменения применятся после переподключения</translation>
+    </message>
+    <message>
         <location filename="../ui/qml/Components/HomeSplitTunnelingDrawer.qml" line="79"/>
         <source>App-based split tunneling</source>
         <translation>Раздельное туннелирование приложений</translation>
@@ -957,6 +967,16 @@ Already installed containers were found on the server. All installed containers 
         <location filename="../ui/qml/Pages2/PageHome.qml" line="1"/>
         <source>App and folder exclusions are off</source>
         <translation>Исключения приложений и папок выключены</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1"/>
+        <source>Exclusions are not working, reconnect the VPN</source>
+        <translation>Исключения не работают, переподключите VPN</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1"/>
+        <source>Exclusion changes will apply after reconnecting</source>
+        <translation>Изменения исключений применятся после переподключения</translation>
     </message>
 </context>
 <context>
@@ -4244,6 +4264,11 @@ Create one from the current settings.</source>
         <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="1"/>
         <source>The VPN is connected. Changes will apply after reconnecting the VPN</source>
         <translation>VPN подключён. Изменения применятся после переподключения VPN</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="1"/>
+        <source>App exclusions are not working. Reconnect the VPN to apply them</source>
+        <translation>Исключения приложений не работают. Переподключите VPN, чтобы применить их</translation>
     </message>
     <message>
         <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="1"/>
@@ -7900,14 +7925,14 @@ Remove the server from the app to continue.</source>
     </message>
     <message>
         <location filename="../ui/qml/main2.qml" line="313"/>
-        <source>The VPN is connected, but all apps, including the excluded ones, now go through the VPN.
+        <source>The VPN is connected, but the excluded apps and folders now go through the VPN too.
 
 What can help:
 • Reconnect the VPN.
 • Check that the excluded apps and folders still exist.
 • Restart the computer: the split tunneling driver may have failed to start.
 • If nothing helps, save the logs in Settings → Logs and send them to support.</source>
-        <translation>VPN подключён, но все приложения, включая исключённые, теперь идут через VPN.
+        <translation>VPN подключён, но исключённые приложения и папки теперь тоже идут через VPN.
 
 Что может помочь:
 • Переподключите VPN.

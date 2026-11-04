@@ -192,7 +192,9 @@ PageType {
                 visible: root.isWindows && ConnectionController.isConnected
 
                 variant: NotificationType.Warning
-                text: qsTr("The VPN is connected. Changes will apply after reconnecting the VPN")
+                text: ConnectionController.isSplitTunnelFailed
+                      ? qsTr("App exclusions are not working. Reconnect the VPN to apply them")
+                      : qsTr("The VPN is connected. Changes will apply after reconnecting the VPN")
             }
 
             ButtonType {
@@ -201,7 +203,8 @@ PageType {
                 Layout.rightMargin: 16
                 Layout.bottomMargin: 16
 
-                visible: root.isWindows && ConnectionController.isConnected && ConnectionController.isReconnectNeeded
+                visible: root.isWindows && ConnectionController.isConnected
+                         && (ConnectionController.isReconnectNeeded || ConnectionController.isSplitTunnelFailed)
 
                 text: qsTr("Reconnect")
 
